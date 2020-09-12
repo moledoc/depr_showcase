@@ -1,0 +1,87 @@
+.TH EXPENSES "1" "May 2020"
+.SH NAME
+.B expenses 
+\- summarizes expenses data for given period.
+.SH DESCRIPTION
+This program summarizes expenses in the given time period 
+defined in the $HOME/.config/expenses/data directory.
+.SH SYNOPSIS
+.SY 
+Usage: expenses [options [yyyy-mm | yyyy-mm-dd] [yyyy-mm | yyyy-mm-dd]]
+.YS
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-current\fR
+Summarizes the running month.This flag is used when there are no flags given.
+.TP
+\fB\-f\fR, \fB\-\-from\fR (\fI\,yyyy-mm\/\fR | \fI\,yyyy-mm-dd\/\fR)
+Summarizes expenses from the given date up to the end of running month.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Shows help.
+.TP
+\fB\-m\fR, \fB\-\-month\fR (\fI\,yyyy-mm\/\fR | \fI\,yyyy-mm-dd\/\fR)
+Summarizes one month expenses starting from the given date.
+If date is omitted, the first day of the month is used.
+.TP
+\fB\-\-monthly\fR
+Summarizes each month expenses 
+starting with the earliest and ending with the latest defined month in the data.
+.TP
+\fB\-\-path\fR (\fI\,path\/\fR)
+Path to data files. Default location for data is $HOME/.config/expenses/data.
+.TP
+\fB\-\-period\fR (\fI\,yyyy-mm\/\fR | \fI\,yyyy-mm-dd\/\fR) (\fI\,yyyy-mm\/\fR | \fI\,yyyy-mm-dd\/\fR)
+Summarizes between given dates.	If date is omitted, the first day of the month is used.
+.TP
+\fB\-p\fR, \fB\-\-previous\fR
+Summarizes the previous month.
+.TP
+\fB\-s\fR, \fB\-\-store\fR
+Stores summaries in $HOME/.config/expenses/data/store.
+If --path flag is used, then summaries are stored in <path to data>/store.
+If the directory <path to data>/store doesn't exist, it will be created.
+For each period a subdirectory is made.
+The subdirectory contains one summary file for each data file
++ one summary file containing info about all the files.
+.TP
+\fB\-t\fR, \fB\-\-total\fR
+Summarizes all expenses.
+.SH NOTES
+.PP
+.de BL
+.IP \[bu] 2
+..
+.BL
+If there are multiple period flags given (such as --previous, --current, --total, --period etc), then only the last such flag is used.
+.BL
+If the end of the month is given for the --month flag as the starting date, 
+then expenses are summarized to the end of the next month.
+Note that in case of February,
+if it's a leap year and the given date has the day value as 28,
+then expenses are summarized to 28th of March.
+.SH EXAMPLES
+.EX
+$ expenses -m 2020-01-07
+$ expenses --month 2020-9
+$ expenses --period 2019-12 2020-03-05
+$ expenses --period 2019-12-8 2020-03 --store
+$ expenses -p -s
+$ expenses -f 2019-05-05
+$ expenses --current --path $HOME/finances/data1
+$ expenses --monthly --store
+.EE
+.SH PROBLEMS/ISSUES
+.PP
+.BL
+Currently descriptions in data do not allow spaces.
+One should substitute them with some other character,
+such as underscore (\_), point (.) etc
+(see example data 3Example_Food.txt or 4Example_Entertainment.txt).
+.BL
+User inputs for dates are not currently checked
+and incorrect inputs will result in errors.
+.RE
+.SH AUTHOR
+.PP
+Written by Meelis Utt
