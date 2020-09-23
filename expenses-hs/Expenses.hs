@@ -36,4 +36,13 @@ main = do
 
 --
 
-
+-------------------------
+--v2 ideas/notes
+--
+-- csv = readFile "data.csv"
+-- test data -- csv = "date,exp,type,desc\n2020-01-01,20,test2,test\n2020-01-01,20,test,test\n2020-01-06,20,test,test\n2020-02-01,20,test,test\n"
+--
+-- notes
+-- month == "2020-01"
+-- cur_lines = filter (\x -> take 7 x == month) csv_lines
+-- take 7 "2020-01-01" ==>> "2020-01"
