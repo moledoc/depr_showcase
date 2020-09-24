@@ -19,6 +19,7 @@ import Data.List.Split -- splitOn
 csvLines :: String -> [[String]]
 csvLines csv = map (splitOn ",") $ filter (\x -> (/=) "" $ take 1 x) $ tail $ lines csv
 
+main :: IO ()
 main = do
  [file] <- getArgs
  contents <- readFile file --"data.csv"
