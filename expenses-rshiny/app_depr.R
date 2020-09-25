@@ -1,4 +1,3 @@
-# TODO: SHOW WINDOW, THAT SAYS "STARTING"
 
 # Check if necessary packages exists.
 # If not then download them
@@ -9,7 +8,8 @@ check_packages <- function(pkg){
     sapply(pkg, require, character.only = TRUE)
 }
 
-packages<-c("shiny","shinydashboard","data.table","DT","Hmisc","dplyr","stringr")
+# The following packages are dependencies for this app.
+packages<-c("shiny","shinydashboard","data.table","DT","dplyr","stringr")
 check_packages(packages)
 
 # Load libraries
@@ -18,7 +18,6 @@ check_packages(packages)
 #library(data.table)
 ##library(fasttime)
 #library(DT)
-#library(Hmisc)
 
 # Set session time to UTC, so the date time is not affected by local time.
 Sys.setenv(TZ='UTC')
@@ -30,7 +29,6 @@ options(encoding="UTF-8",encoding="UTF-8")
 # If not, create the dir and all the necessary files.
 if (!dir.exists("data/")){
 	dir.create("data/")
-	# TODO: UPDATE WINDOW TEXT TO BE "INITIALIZING"
 	data <- data.table(
 					   Date=as.Date(NA_character_),
 					   Expense=NA_real_,
@@ -41,16 +39,22 @@ if (!dir.exists("data/")){
 					   Type="Unknown",
 					   Description="Unknown"
 					   )
+	# TODO: UPDATE WINDOW TEXT TO BE "INITIALIZING"
 	data_scratchpad <- data.table("")
-	saveRDS(object = data, file = "data/data.Rds")
-	saveRDS(object = data_types, file = "data/data_types.Rds")
-	saveRDS(object = data_scratchpad, file = "data/data_scratchpad.Rds")
+	# saveRDS(object = data, file = "data/data.csv")
+	# saveRDS(object = data_types, file = "data/data_types.csv")
+	# saveRDS(object = data_scratchpad, file = "data/data_scratchpad.csv")
+	fwrite( x=data, file="data/data.csv", sep=",")
+	fwrite( x=data_types, file="data/data_types.csv", sep=",")
+	fwrite( x=data_scratchpad, file="data/data_scratchpad.csv", sep=",")
 } else{
-	data <- readRDS(file = "data/data.Rds")
+	data <- fread(file = "data/data.csv",sep=",")
 	data[,Date := as.Date(Date,origin="1970-01-01")]
-	data_types <- readRDS(file = "data/data_types.Rds")
-	data_scratchpad <- readRDS(file = "data/data_scratchpad.Rds")
+	data_types <- fread(file = "data/data_types.csv",sep=",")
+	data_scratchpad <- fread(file = "data/data_scratchpad.csv",sep="")
 }
+
+
 
 ## Read in the data and make 'Date' column a timestamp.
 #data <- fread(file="data/data.txt",sep="|")
@@ -148,6 +152,7 @@ body <- dashboardBody(
 						# TODO: Allow import from other directories.
 						# TODO: improve import/export design
 						# TODO: implement logic for import/export
+						# TODO: allow other separators in import/export
 						fluidRow(
 							box(
 								radioButtons(inputId="imp_exp_choice",
@@ -160,15 +165,16 @@ body <- dashboardBody(
 								actionButton("import","Import"), 
 								actionButton("export","Export"), 
 								p(),
-								tags$b("NB! Imported data must be located in the same directory as the app with corresponding file name."),
-								tags$b("NB! Imported data must be semi-colon separated and follow the same data structure."),
-								tags$b("Exported data is found in data/ directory with .csv extension."),
+								tags$b("NB!"),
+								p("Imported data must be located in the same directory as the app with corresponding file name (data.csv,data_types.csv or data_scratchpad.csv)."),
+								p("(Currently,) Imported data must be comma separated and follow the data structure: Date,Expense,Type,Description."),
+								p("Exported data is found in data/ directory with .csv extension."),
 								width=5
 							)
 						)
 					)#,
-					#tabPanel("Delete expense",
 					#		 #TODO:
+					#tabPanel("Delete expense",
 					#	fluidRow(
 					#		box(
 					#			textInput(inputId="new_type",
@@ -216,17 +222,17 @@ server = function(input, output,session) {
 
 					output$show_data <- DT::renderDataTable({datatable(data[order(-Date)])})
 
-					saveRDS(
-						object = data,
-						file = "data/data.Rds"
-					)
+					# saveRDS(
+					# 	object = data,
+					# 	file = "data/data.Rds"
+					# )
 
-# 					fwrite(
-# 						x=list(input$date,as.numeric(input$expense),input$type,input$desc),
-# 					   	file="data/data.txt",
-# 					   	append=TRUE,
-# 					   	sep="|"
-# 					)
+					fwrite(
+						x=list(input$date,as.numeric(input$expense),input$type,input$desc),
+					   	file="data/data.txt",
+					   	append=TRUE,
+					   	sep=","
+					)
 
 					showNotification(paste0("Expense added: (",
 												input$date,",",
@@ -267,8 +273,8 @@ server = function(input, output,session) {
 
 	observeEvent(input$add_new_type, {
 					 
-		new_type_cap <- input$new_type %>% tolower() %>% Hmisc::capitalize()
-		new_desc_cap <- input$new_desc%>% tolower() %>% Hmisc::capitalize()
+		new_type_cap <- input$new_type %>% tolower()
+		new_desc_cap <- input$new_desc%>% tolower()
 
 		if(data_types[Type==new_type_cap & Description==new_desc_cap, .N]==0 & 
 		   	input$new_type!="" & input$new_desc!=""){
@@ -278,17 +284,17 @@ server = function(input, output,session) {
 
 			output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
 
-			saveRDS(
-				object = data_types,
-				file = "data/data_types.Rds"
-			)
+			# saveRDS(
+			# 	object = data_types,
+			# 	file = "data/data_types.Rds"
+			# )
 
-# 		    fwrite(
-# 				x=list(new_type_cap, new_desc_cap),
-# 		       	file="data/data_types.txt",
-# 		       	append=TRUE,
-# 				sep="|"
-# 		    )
+		    fwrite(
+				x=list(new_type_cap, new_desc_cap),
+		       	file="data/data_types.txt",
+		       	append=TRUE,
+				sep=","
+		    )
 
 			updateSelectizeInput(session=session, inputId="type",
 				choices=c("Choose one" = "",data_types[,Type %>% unique() %>% sort()])
@@ -324,8 +330,8 @@ server = function(input, output,session) {
 
 	observeEvent(input$delete_type, {
 
-		new_type_cap <- input$new_type %>% tolower() %>% Hmisc::capitalize()
-		new_desc_cap <- input$new_desc %>% tolower() %>% Hmisc::capitalize()
+		new_type_cap <- input$new_type %>% tolower()
+		new_desc_cap <- input$new_desc %>% tolower()
 
 		if(data_types[Type==new_type_cap & Description==new_desc_cap, .N]>0 & 
 		   	input$new_type!="" & input$new_desc!=""){
@@ -333,17 +339,17 @@ server = function(input, output,session) {
 			data_types <<- data_types[Type!=new_type_cap & Description!=new_desc_cap]
 
 			output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
-			saveRDS(
-				object = data_types,
-				file = "data/data_types.Rds"
-			)
+			# saveRDS(
+			# 	object = data_types,
+			# 	file = "data/data_types.Rds"
+			# )
 
-# 			fwrite(
-# 				x=data_types,
-# 				file="data/data_types.txt",
-# 				append=F,
-# 				sep="|"
-# 			)
+			fwrite(
+				x=data_types,
+				file="data/data_types.txt",
+				append=F,
+				sep=","
+			)
 
 			updateSelectizeInput(session=session, inputId="type",
 				choices=c("Choose one" = "",data_types[,Type %>% unique() %>% sort()])
@@ -375,25 +381,70 @@ server = function(input, output,session) {
 
 		rm(new_type_cap,new_desc_cap)
 	})
+	observeEvent(input$save_scratchpad, {
+		data_scratchpad <<- input$scratchpad #%>% strsplit("\n")
+		# saveRDS( object = data_scratchpad, file = "data/data_scratchpad.Rds")
+		fwrite(x=data_scratchpad,file="data/data_scratchpad.txt",append=F)
+		showNotification("Scratchpad saved", type="message",duration=10)
+	})
 
 	observeEvent(input$import,{
 		infile <- dplyr::case_when(
 			input$imp_exp_choice %in% 'Data' ~ 'data.csv',
 			input$imp_exp_choice %in% 'Data Types' ~ 'data_types.csv',
-			input$imp_exp_choice %in% 'scratchpad' ~ 'data_scratchpad.csv',
+			input$imp_exp_choice %in% 'Scratchpad' ~ 'data_scratchpad.csv',
 		)
-
+		sep=','
+		if(infile %in% 'data_scratchpad.csv'){
+			sep=''
+		}
 		dot_index <- stringr::str_locate(pattern=fixed('.'),infile)
-		obj <- fread(file=infile,sep=';')
-		assign(str_sub(infile,1,dot_index[1]-1),obj,envir=.GlobalEnv)
+		null <- tryCatch({
+			obj <- fread(file=infile,sep=sep)
+			obj_var <- str_sub(infile,1,dot_index[1]-1)
+			assign(obj_var,obj,envir=.GlobalEnv)
+
+			# saveRDS(
+			# 	object = obj_var,
+			# 	file = paste0("data/",obj_var,".Rds")
+			# )
+			fwrite(x=eval(parse(text=obj_var)),file=paste0("data/",obj_var,".csv"),append=T)
+
+			output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
+			updateTextInput(session=session, inputId="new_type",
+				label="Insert new type:",
+				value=""
+			)
+			updateTextInput(session=session, inputId="new_desc",
+				label="Insert new description:",
+				value=""
+			)
+			showNotification(paste0("Imported: ",imp_exp_choice), type="message",duration=10)
+		},
+		waring=function(cond){
+			showNotification(paste0("File not found: ",infile), type="warning",duration=10)
+		},
+		error = function(cond){
+			showNotification(paste0("File not found: ",infile), type="error",duration=10)
+		})
+
 	})
 
+	observeEvent(input$export,{
+		infile <- dplyr::case_when(
+			input$imp_exp_choice %in% 'Data' ~ 'data.csv',
+			input$imp_exp_choice %in% 'Data Types' ~ 'data_types.csv',
+			input$imp_exp_choice %in% 'Scratchpad' ~ 'data_scratchpad.csv',
+		)
+		sep=','
+		if(infile %in% 'data_scratchpad.csv'){
+			sep=''
+		}
+		dot_index <- stringr::str_locate(pattern=fixed('.'),infile)
+		obj_var <- str_sub(infile,1,dot_index[1]-1)
+		fwrite(x=eval(parse(text=obj_var)),file=paste0("data/",infile),sep=sep)
 
-	observeEvent(input$save_scratchpad, {
-		data_scratchpad <<- input$scratchpad #%>% strsplit("\n")
-		saveRDS( object = data_scratchpad, file = "data/data_scratchpad.Rds")
-# 		fwrite(x=data_scratchpad,file="data/data_scratchpad.txt",append=F)
-		showNotification("Scratchpad saved", type="message",duration=10)
+		showNotification(paste0("Exported: ",imp_exp_choice," -> data/",infile), type="message",duration=10)
 	})
 
 	output$show_data <- DT::renderDataTable({datatable(data[order(-Date)])})
