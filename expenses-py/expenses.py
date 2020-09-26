@@ -5,6 +5,7 @@ import sys
 # Change path according to the directory,
 # where this program and 'data.csv' is.
 path = 'path/to/repository'
+# path = ''
 
 cur = date.today()
 option=""
@@ -43,7 +44,7 @@ while True:
         break
 
     #print(line) #for debugging data
-    line_elem = line.split(";")
+    line_elem = line.split(",")
 
     if "Date" == line_elem[0]:
         continue
