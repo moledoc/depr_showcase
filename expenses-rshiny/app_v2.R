@@ -418,13 +418,13 @@ server <- function(input, output, session) {
      )
    } else{
      showNotification(
-      "Invalid expense,type or description",
+      "No expense added: Invalid expense,type or description",
       type = "error", duration = 10
      )
    }
   },
   warning = function(cond){
-   showNotification("Invalid expense", type = "error", duration = 10)
+   showNotification("No expense added: Invalid expense", type = "error", duration = 10)
   },
   finally = {
     update_exp_tab(input, output, session)
@@ -433,29 +433,38 @@ server <- function(input, output, session) {
 
  observeEvent(input$submit_del_exp, {
   del_index <- as.numeric(input$delete)
-  notification <- ""
-  for (i in 1:length(del_index)){
-   notification <- paste0(
-    notification,
-    "(", data[del_index[i], Date], ",",
-         data[del_index[i], Expense], ",",
-         data[del_index[i], Type], ",",
-         data[del_index[i], Description], ")", "\n"
+  if(length(del_index) == 0){
+   showNotification(
+    "No expenses deleted: Invalid indeces",
+    type = "error", duration = 10
    )
   }
-  showNotification(
-   paste0("Deleted data:\n", notification),
-   type = "message", duration = 10
-  )
-  data <- data[order(-Date, Type, Description)][-del_index]
-  assign("data", data, envir = .GlobalEnv)
-  fwrite(
-   x      = data,
-   file   = "data/data.csv",
-   sep    = ",",
-   append = FALSE
-  )
-  update_exp_tab(input ,output, session)
+  else{
+   notification <- ""
+   for (i in 1:length(del_index)){
+    data <- data[order(-Date, Type, Description)]
+    notification <- paste0(
+     notification,
+     "(", data[del_index[i], Date], ",",
+          data[del_index[i], Expense], ",",
+          data[del_index[i], Type], ",",
+          data[del_index[i], Description], ")", "\n"
+    )
+   }
+   showNotification(
+    paste0("Deleted data:\n", notification),
+    type = "message", duration = 10
+   )
+   data <- data[order(-Date, Type, Description)][-del_index]
+   assign("data", data, envir = .GlobalEnv)
+   fwrite(
+    x      = data,
+    file   = "data/data.csv",
+    sep    = ",",
+    append = FALSE
+   )
+   update_exp_tab(input ,output, session)
+  }
  })
 
  observeEvent(input$add_new_type,{
