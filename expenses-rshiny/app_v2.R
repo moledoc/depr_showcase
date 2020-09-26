@@ -17,24 +17,24 @@ Sys.setenv(TZ = "UTC")
 # Ensure UTF-8 encoding
 options(encoding = "UTF-8")
 
-# Do some preformat for dates (for graphics)
+# Do some pre-format for dates (for graphics)
+format_date <- function(date, offset = 0){
+ date_helper <- month(date) + offset
+ return(
+  ymd(
+   paste0(
+    year(date),
+    if_else(date_helper < 10, paste0("0", date_helper), as.character(date_helper)),
+    "01"
+   )
+  )
+ )
+}
+
 cur_date <- Sys.Date()
-date_to_helper <- month(cur_date) + 1
-date_from_helper <- month(cur_date) - 2
-date_to_init <- ymd(
- paste0(
-  year(cur_date),
-  if_else(date_to_helper < 10, paste0("0", date_to_helper), as.character(date_to_helper)),
-  "01"
- )
-)
-date_from_init <- ymd(
- paste0(
-  year(cur_date),
-  if_else(date_from_helper < 10, paste0("0", date_from_helper), as.character(date_from_helper)),
-  "01"
- )
-)
+date_to_init <- format_date(cur_date, offset = 1)
+date_from_init <- format_date(cur_date, offset = -2)
+
 
 # If data dir does not exist, create it and make the template files.
 if (!dir.exists("data/")) {
@@ -233,7 +233,7 @@ graphics_tab <- tabItem(
      label    = "Plot type:",
      choices  = c(
       "Scatterplot" = "scatterplot",
-      "Boxplot"     = "boxplot"
+      "Barplot"     = "barplot"
       )
      ),
     actionButton( inputId = "make_plot", label = "Make plot", icon = icon("chart-bar"))
@@ -300,11 +300,74 @@ update_type_tab <- function(input, output, session){
 }
 
 # Graphics
+# TODO:
 make_plot <- function(input, output, session){
- # TODO:
- analytics_plot <- ggplot(data,aes(x = Date, y = Expense, fill = Type))
- analytics_plot <- analytics_plot + geom_point()
- # return(analytics_plot)
+
+ date_from <- input$date_from
+ date_to   <- input$date_to
+ sel_type  <- input$sel_type
+ sel_desc  <- input$sel_desc
+ plots     <- input$plots
+
+ # Filtering
+ plot_data <- data[Date >= date_from & Date <= date_to, .(plot_date = format_date(Date)), by = .(Date,Expense,Type,Description)]
+ if (!is.null(sel_type)){
+  plot_data <- plot_data[Type %in% sel_type]
+ }
+ if (!is.null(sel_desc)){
+  plot_data <- plot_data[Description %in% sel_desc]
+ }
+
+ # Scatterplot
+ if(input$plots == "scatterplot"){
+  # base plot
+  analytics_plot <- ggplot(plot_data,aes(x = Date, y = Expense))
+  if (length(sel_type) == 1){
+   analytics_plot <- analytics_plot +
+    geom_point(data = plot_data, aes(color = Description))
+  }
+  else{
+   analytics_plot <- analytics_plot +
+    geom_point(data = plot_data, aes(color = Type))
+  }
+ # Barplot
+ } else if(input$plots == "barplot"){
+  # base plot
+  analytics_plot <- ggplot()
+  if (length(sel_type) == 1){
+   analytics_plot <- analytics_plot +
+    geom_bar(
+     data = plot_data,
+     aes(
+      x = Description,
+      weight = Expense,
+      fill = Description
+      ),
+     position = "dodge"
+    ) +
+    facet_wrap(plot_date~.) +
+    ylab("Sum of expenses") +
+    coord_flip()
+  }
+  else{
+   analytics_plot <- analytics_plot +
+    geom_bar(
+     data = plot_data,
+     aes(
+      x = Type,
+      weight = Expense,
+      fill = Type
+      ),
+     position = "dodge"
+    ) +
+    facet_wrap(plot_date~.) +
+    ylab("Sum of expenses") +
+    coord_flip()
+  }
+ }
+
+
+
  output$show_analytics <- renderPlot({analytics_plot})
 }
 
@@ -314,7 +377,7 @@ server <- function(input, output, session) {
  observe({
   update_exp_tab(input, output, session)
   update_type_tab(input, output, session)
-  make_plot(input, output, session)
+  # make_plot(input, output, session)
  })
  observe({
   updateSelectizeInput(
