@@ -235,7 +235,8 @@ graphics_tab <- tabItem(
       "Scatterplot" = "scatterplot",
       "Boxplot"     = "boxplot"
       )
-     )
+     ),
+    actionButton( inputId = "make_plot", label = "Make plot", icon = icon("chart-bar"))
     )
    )
   )
@@ -479,10 +480,10 @@ server <- function(input, output, session) {
   )
  })
 
- # output$show_analytics <- renderPlot({
- #  make_plot(input, output, session)
- # })
-
+ # update graphic 
+ observeEvent(input$make_plot,{
+  make_plot(input, output, session)
+ })
 
  session$onSessionEnded(function() {
   stopApp()
