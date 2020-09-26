@@ -33,7 +33,7 @@ if (!dir.exists("data/")) {
  data_scratchpad <- data.table("")
  fwrite(x = data, file = "data/data.csv", sep = ",")
  fwrite(x = data_types, file = "data/data_types.csv", sep = ",")
- fwrite(x = data_scratchpad, file = "data/data_scratchpad.csv", sep = ",")
+ fwrite(x = data_scratchpad, file = "data/data_scratchpad.csv", sep = "")
 
 }
 
@@ -86,8 +86,22 @@ expense_panel <- tabPanel(
     choices = "",
     width   = 385,
    ),
-   actionButton("submit_new_exp","Submit"),
-   width = 3
+   fluidRow(
+    actionButton("submit_new_exp", "Submit"),
+    actionButton("submit_del_exp", "Delete"),
+    width  = 3,
+   ),
+   p(),
+   selectInput(
+    inputId = "delete",
+    labe    = "Delete expense:",
+    choices = c(
+     "Select expenses" = "",
+     1:data[,.N]
+    ),
+    multiple = TRUE
+   ),
+   width  = 3,
   ),
   box(
    title = strong("Expenses"),
@@ -98,7 +112,7 @@ expense_panel <- tabPanel(
 
 # Panels: type
 type_panel <- tabPanel(
- "Add type/desc",
+ "Add type/description",
  fluidRow(
   box(
    textInput(
@@ -111,7 +125,7 @@ type_panel <- tabPanel(
    label = "Insert new description:",
    width = 385
    ),
-   actionButton("add_new_type", "Add"), 
+   actionButton("add_new_type", "Add"),
    actionButton("delete_type", "Delete"),
    width = 3
   ),
@@ -129,11 +143,15 @@ scratchpad_panel <- tabPanel(
  fluidRow(
   box(
    textAreaInput(
-    inputId = "desc",
+    inputId = "scratchpad",
     label   = "",
     width   = "200%",
     height  = "300px",
-    value   = paste0(data_scratchpad, collapse = "\n"),
+    value   = paste0(
+     unlist(data_scratchpad) %>%
+      gsub(pattern = "\"", replacement = ""),
+     collapse = "\n"
+     ),
     resize  = "both"
    ),
    actionButton("save_scratchpad", "Save scratchpad"),
@@ -184,38 +202,35 @@ update_exp_tab <- function(input, output, session){
    label   = "Expense amount",
    value   = ""
   )
-
   updateSelectizeInput(
    session = session,
    inputId = "type",
    choices = c("Choose one" = "", data_types[, Type %>% unique() %>% sort()])
   )
-
   updateSelectizeInput(
    session = session,
-   inputId = "desc",
-   choices = c("Choose one" = "", data_types[Type==input$type, Description %>% unique() %>% sort()])
+   inputId = "delete",
+   choices = c("Delete expense:" = "", 1:data[, .N])
   )
-
-  output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
+  output$show_data <- DT::renderDataTable({datatable(data[order(-Date, Type, Description)])})
 }
 
 # update 'type tab'
+update_type_tab <- function(input, output, session){
 
-update_exp_tab <- function(input, output, session){
+ updateTextInput(
+  session = session,
+  inputId = "new_type",
+  label   = "Insert new type: ",
+  value   = ""
+ )
+ updateTextInput(
+  session = session,
+  inputId = "new_desc",
+  label   = "Insert new description: ",
+  value   = ""
+ )
 
- updateSelectizeInput(
-  session = session,
-  inputId = "type",
-  choices = c("Choose one" = "", data_types[, Type %>% unique() %>% sort()])
- )
- 
- updateSelectizeInput(
-  session = session,
-  inputId = "desc",
-  choices = c("Choose one" = "", data_types[Type==input$type, Description %>% unique() %>% sort()])
- )
- 
  output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
 }
 
@@ -224,8 +239,15 @@ update_exp_tab <- function(input, output, session){
 server <- function(input, output, session) {
  observe({
   update_exp_tab(input, output, session)
-  update_exp_tab(input, output, session)
+  update_type_tab(input, output, session)
  })
+ observe({
+  updateSelectizeInput(
+   session = session,
+   inputId="desc",
+   choices = c("Choose one" = "", data_types[Type==input$type,Description %>% unique() %>% sort()])
+    )
+})
 
  observeEvent(input$submit_new_exp, {
   tryCatch({
@@ -238,28 +260,145 @@ server <- function(input, output, session) {
      )
      assign("data",data,envir = .GlobalEnv)
      output$show_data <- DT::renderDataTable({datatable(data[order(-Date)])})
-  
      fwrite(
       x = list( input$date, as.numeric(input$expense), input$type, input$desc),
-      file = "data/data.txt",
+      file = "data/data.csv",
       append = TRUE,
       sep = ","
      )
+
      showNotification(
       paste0( "Expense added: (", input$date, ",", input$expense, ",", input$type, ",", input$desc, ")"),
-      type = "message", duration = 10)
+      type = "message", duration = 10
+     )
    } else{
      showNotification(
       "Invalid expense,type or description",
-      type = "error",
-      duration = 10)
+      type = "error", duration = 10
+     )
    }
   },
   warning = function(cond){
-   showNotification("Invalid expense", type = "error", duration = 10) 
+   showNotification("Invalid expense", type = "error", duration = 10)
+  },
+  finally = {
+    update_exp_tab(input, output, session)
+  })
+ })
+
+ observeEvent(input$submit_del_exp, {
+  del_index <- as.numeric(input$delete)
+  notification <- ""
+  for (i in 1:length(del_index)){
+   notification <- paste0(
+    notification,
+    "(", data[del_index[i], Date], ",",
+         data[del_index[i], Expense], ",",
+         data[del_index[i], Type], ",",
+         data[del_index[i], Description], ")", "\n"
+   )
   }
- )
-})
+  showNotification(
+   paste0("Deleted data:\n", notification),
+   type = "message", duration = 10
+  )
+  data <- data[order(-Date, Type, Description)][-del_index]
+  assign("data", data, envir = .GlobalEnv)
+  fwrite(
+   x      = data,
+   file   = "data/data.csv",
+   sep    = ",",
+   append = FALSE
+  )
+  update_exp_tab(input ,output, session)
+ })
+
+ observeEvent(input$add_new_type,{
+  new_type <- input$new_type %>% tolower()
+  new_desc <- input$new_desc %>% tolower()
+  if(
+   length(grep(x = new_type, pattern = ",", fixed = T)) > 0 |
+   length(grep(x = new_desc, pattern = ",", fixed = T)) > 0
+  ){
+   showNotification(
+    "Commas are not allowed in type/description!",
+    type = "warning", duration = 10
+   )
+  } else if(data_types[Type == new_type & Description == new_desc, .N] == 0 &
+  input$new_type != "" & input$new_desc != ""){
+   data_types <- rbindlist(
+    list(data_types, list(new_type, new_desc))
+   )
+   assign("data_types", data_types, envir = .GlobalEnv)
+   fwrite(
+    x      = list(new_type, new_desc),
+    file   = "data/data_types.csv",
+    sep    = ",",
+    append = TRUE
+   )
+   showNotification(
+    paste0("Added: (", new_type, ",", new_desc, ")"),
+    type = "message", duration = 10
+    )
+  } else {
+   showNotification(
+    "Type/Description already exists or one field is empty",
+    type = "default", duration = 10
+   )
+  }
+  update_exp_tab(input, output, session)
+  update_type_tab(input, output, session)
+ })
+
+ observeEvent(input$delete_type,{
+  del_type <- input$new_type %>% tolower()
+  del_desc <- input$new_desc %>% tolower()
+  if(
+   length(grep(x = del_type, pattern = ",", fixed = T)) > 0 |
+   length(grep(x = del_desc, pattern = ",", fixed = T)) > 0
+  ){
+   showNotification(
+    "Commas are not allowed in type/description!",
+      type = "warning", duration = 10
+   )
+  } else if(data_types[Type == del_type & Description == del_desc, .N] > 0 &
+  input$new_type != "" & input$new_desc != ""){
+   data_types <- data_types[Type != del_type | Description != del_desc]
+   assign("data_types", data_types, envir = .GlobalEnv)
+   fwrite(
+    x      = data_types,
+    file   = "data/data_types.csv",
+    sep    = ",",
+    append = FALSE
+   )
+   showNotification(
+    paste0("Deleted: (", del_type, ",", del_desc, ")"),
+    type = "message", duration = 10
+    )
+  } else {
+   showNotification(
+    "Type/Description doesn't exist or one field is empty",
+    type = "default", duration = 10
+   )
+  }
+  update_exp_tab(input, output, session)
+  update_type_tab(input, output, session)
+ })
+
+ observeEvent(input$save_scratchpad, {
+  # data_scratchpad <- input$scratchpad %>% strsplit("\n") %>% data.table(stringsAsFactors = F)
+  new_scratch <- input$scratchpad %>% strsplit("\n")
+  data_scratchpad <- data.table(new_scratch[[1]])
+  assign("data_scratchpad", data_scratchpad, envir = .GlobalEnv)
+  fwrite(x = data_scratchpad, file = "data/data_scratchpad.csv", append = F)
+  showNotification("Scratchpad saved", type = "message",duration = 10)
+  updateTextInput(
+   session = session,
+   inputId = "scratchpad",
+   label = ""
+  )
+ })
+
  session$onSessionEnded(function() {
   stopApp()
  })

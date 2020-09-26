@@ -1,2 +1,36 @@
 Type,Description
-Unknown,Unknown
+Entertainment,Festival
+Entertainment,Movie snack
+Entertainment,Movie tickets
+Entertainment,Museum
+Festival,Food
+Festival,Snack
+Food,Alcohol
+Food,Baking
+Food,Eating out
+Food,Food
+Food,Lunch
+Food,Snack
+Living costs,Water + Trash
+Other,Barber
+Other,Cable
+Other,Dentist
+Other,Mothers day present
+Other,Pants
+Other,Swimware
+Sport,Pants
+Sport,Shaker
+Sport,Swimming equipment
+Transport,Fuel
+Traveling,Alcohol
+Traveling,Boat tickets
+Traveling,Eating out
+Traveling,Public transport
+Traveling,Snack
+Traveling,Tickets
+Traveling,Transport
+Utilities consumables,Dish washing soap
+Utilities consumables,Food conteiner
+Utilities consumables,Skin care
+Utilities consumables,Storage box
+Utilities consumables,Toilet paper
