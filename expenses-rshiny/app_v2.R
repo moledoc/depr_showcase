@@ -8,7 +8,7 @@ check_packages <- function(pkg) {
 }
 
 # The following packages are dependencies for this app.
-packages <- c("shiny", "shinydashboard", "data.table", "DT", "dplyr", "stringr")
+packages <- c("shiny", "shinydashboard", "data.table", "DT", "dplyr", "stringr","ggplot2","lubridate")
 check_packages(packages)
 
 # Set session time to UTC, so the date time is not affected by local time.
@@ -16,6 +16,25 @@ Sys.setenv(TZ = "UTC")
 
 # Ensure UTF-8 encoding
 options(encoding = "UTF-8")
+
+# Do some preformat for dates (for graphics)
+cur_date <- Sys.Date()
+date_to_helper <- month(cur_date) + 1
+date_from_helper <- month(cur_date) - 2
+date_to_init <- ymd(
+ paste0(
+  year(cur_date),
+  if_else(date_to_helper < 10, paste0("0", date_to_helper), as.character(date_to_helper)),
+  "01"
+ )
+)
+date_from_init <- ymd(
+ paste0(
+  year(cur_date),
+  if_else(date_from_helper < 10, paste0("0", date_from_helper), as.character(date_from_helper)),
+  "01"
+ )
+)
 
 # If data dir does not exist, create it and make the template files.
 if (!dir.exists("data/")) {
@@ -97,7 +116,7 @@ expense_panel <- tabPanel(
     labe    = "Delete expense:",
     choices = c(
      "Select expenses" = "",
-     1:data[,.N]
+     1:data[, .N]
     ),
     multiple = TRUE
    ),
@@ -164,8 +183,8 @@ scratchpad_panel <- tabPanel(
 booking_tab <- tabItem(
  tabName = "booking_tab",
  tabBox(
-  id = "booking_tab_box",
-  width = 12,
+  id     = "booking_tab_box",
+  width  = 24,
   expense_panel,
   scratchpad_panel,
   type_panel
@@ -175,9 +194,53 @@ booking_tab <- tabItem(
 # dashboard tab: graphics
 graphics_tab <- tabItem(
  tabName = "graphics_tab",
- # TODO
- h2("TODO")
-)
+ width  = 24,
+ tabBox(
+  id     = "graphics_tab_box",
+  width  = 24,
+  height = "100%",
+  fluidRow(
+   width = "200%",
+   box(plotOutput("show_analytics"), width = 9, height = "100%"),
+   box(
+    width = 3,
+    dateInput(
+     inputId = "date_from",
+     label   = "Date from",
+     width   = 90,
+     value   = date_from_init
+    ),
+    dateInput(
+     inputId = "date_to",
+     label   = "Date to",
+     width   = 90,
+     value   = date_to_init
+    ),
+    selectInput(
+     inputId = "sel_type",
+     label   = "Choose types:",
+     choices = c("Choose types" = "", data_types[, Type %>% unique() %>% sort()]),
+     multiple = TRUE
+    ),
+    selectInput(
+     inputId = "sel_desc",
+     label   = "Choose description:",
+     choices = "",
+     multiple = TRUE
+     ),
+    radioButtons(
+     inputId  = "plots",
+     label    = "Plot type:",
+     choices  = c(
+      "Scatterplot" = "scatterplot",
+      "Boxplot"     = "boxplot"
+      )
+     )
+    )
+   )
+  )
+ )
+
 
 # dashboard tabs
 tabitems <- tabItems(booking_tab, graphics_tab)
@@ -189,6 +252,8 @@ body <- dashboardBody(tabitems)
 ui <- dashboardPage(header, sidebar, body)
 
 # LOGIC FUNCTIONS
+
+# Server
 # update 'add expense'
 update_exp_tab <- function(input, output, session){
   updateDateInput(
@@ -230,8 +295,16 @@ update_type_tab <- function(input, output, session){
   label   = "Insert new description: ",
   value   = ""
  )
-
  output$show_types <- DT::renderDataTable({datatable(data_types[order(Type,Description)])})
+}
+
+# Graphics
+make_plot <- function(input, output, session){
+ # TODO:
+ analytics_plot <- ggplot(data,aes(x = Date, y = Expense, fill = Type))
+ analytics_plot <- analytics_plot + geom_point()
+ # return(analytics_plot)
+ output$show_analytics <- renderPlot({analytics_plot})
 }
 
 
@@ -240,15 +313,23 @@ server <- function(input, output, session) {
  observe({
   update_exp_tab(input, output, session)
   update_type_tab(input, output, session)
+  make_plot(input, output, session)
  })
  observe({
   updateSelectizeInput(
    session = session,
-   inputId="desc",
+   inputId = "desc",
    choices = c("Choose one" = "", data_types[Type==input$type,Description %>% unique() %>% sort()])
     )
-})
+ })
 
+ observe({
+  updateSelectizeInput(
+   session = session,
+   inputId = "sel_desc",
+   choices = c("Choose one" = "", data_types[Type %in% input$sel_type,Description %>% unique() %>% sort()])
+    )
+ })
  observeEvent(input$submit_new_exp, {
   tryCatch({
     if(!("" %in% c(input$expense, input$type, input$desc))){
@@ -386,7 +467,6 @@ server <- function(input, output, session) {
  })
 
  observeEvent(input$save_scratchpad, {
-  # data_scratchpad <- input$scratchpad %>% strsplit("\n") %>% data.table(stringsAsFactors = F)
   new_scratch <- input$scratchpad %>% strsplit("\n")
   data_scratchpad <- data.table(new_scratch[[1]])
   assign("data_scratchpad", data_scratchpad, envir = .GlobalEnv)
@@ -398,6 +478,11 @@ server <- function(input, output, session) {
    label = ""
   )
  })
+
+ # output$show_analytics <- renderPlot({
+ #  make_plot(input, output, session)
+ # })
+
 
  session$onSessionEnded(function() {
   stopApp()
