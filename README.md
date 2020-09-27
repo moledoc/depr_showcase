@@ -23,7 +23,7 @@ In the future I'm planning on adding implementations of expenses project in diff
 
 	* Python + SQL (py_sql) - this project is old, incomplete and abandoned, but showcases some python and sql (althought the code is not the most elegant).
 	* Python (py) -  this project was written to be simple script that can be ran on the commandline either in computer or mobile device.
-	* R + shiny (rshiny) - this project was written to be a graphical solution to expenses project, that allows interactive expenses adding and overview. This solution is in progress. If you find any bugs, make a bug report or contact me.
+	* R + shiny (rshiny) - this project was written to be a graphical solution to expenses project, that allows to manage and visualize expenses interactively.
 	* C++ (cpp) - this project was written as a project in C++ course and is meant to be run in a GNU/Linux commandline.
 	* Haskell (hs) - this project is written, so I could learn Haskell. Currently at a very early stage.
 
