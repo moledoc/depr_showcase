@@ -62,25 +62,25 @@ In this repository, there is test data given.
 
 ### Screenshots
 
-Add/delete expense:
+#### Add/delete expense:
 
-![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/add_expense.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/README_images/add_expense.png)
 
 #### Make a temporary scratch for self:
 
-![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/scratchpad.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/README_images/scratchpad.png)
 
 #### Add/delete type/description:
 
-![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/add_type_desc.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/README_images/add_type_desc.png)
 
 #### Scatterplot demo:
 
-![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/scatterplot.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/README_images/scatterplot.png)
 		
 #### Barplot demo:
 
-![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/barplot.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/README_images/barplot.png)
 
 ## Author
 
