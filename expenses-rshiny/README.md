@@ -1,12 +1,12 @@
-# Name 
+## Name 
 
 expenses-rshiny
 
-# Synopsis 
+## Synopsis 
 
 Tool to manage and visualize expenses. Written in R using Shiny Dashboard.
 
-# Download
+## Download
 
 Download the whole repository and navigate to expenses-rshiny:
 
@@ -25,17 +25,17 @@ git fetch --all
 git checkout origin/master -- expenses-rshiny
 ```
 
-# Installation
+## Installation
 
 There is no need for installation, except for installing R itself.
 Necessary packages are checked and installed if necessary.
 
 
-## Note
+### Note
 
 	* When running GNU/Linux or other Unix operating system, then user might need to resolve some dependencies themself.
 
-# Overview
+## Overview
 
 The program listens to port 4004. If running the program does not open a window by itself, then user can use url http://127.0.0.1:4004 in the browser to view the application. This program expects data/ directory to be in the same directory as app_v2.R. The directory data/ needs to contain the following files:
 
@@ -60,10 +60,28 @@ If directory data/ does not exits, then it is created with empty files mentioned
 User can import his/hers data simply by coping the file into data/ directory.
 In this repository, there is test data given.
 
-## Screenshots
+### Screenshots
 
+Add/delete expense:
 
+![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/add_expense.png)
+
+#### Make a temporary scratch for self:
+
+![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/scratchpad.png)
+
+#### Add/delete type/description:
+
+![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/add_type_desc.png)
+
+#### Scatterplot demo:
+
+![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/scatterplot.png)
 		
-# Author
+#### Barplot demo:
+
+![](https://github.com/moledoc/showcase/blob/master/expenses-rshiny/barplot.png)
+
+## Author
 
 Written by Meelis Utt
