@@ -11,10 +11,21 @@ defined in the $HOME/.config/expenses/data directory.
 
 ## Download
 
-Download the program:
+Download the whole repository and navigate to expenses-cpp:
 
 ```sh
-git clone https://meelis_utt@bitbucket.org/meelis_utt/c-project.git
+git clone https://github.com/moledoc/showcase.git
+```
+
+or make new directory and checkout only expenses-cpp:
+
+```sh
+mkdir showcase
+cd showcase
+git init
+git remote add origin https://github.com/moledoc/showcase.git
+git fetch --all
+git checkout origin/master -- expenses-cpp
 ```
 
 ## Installation
