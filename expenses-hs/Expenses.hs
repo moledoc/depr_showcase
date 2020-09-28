@@ -30,7 +30,6 @@ main = do
  csvData <- BL.readFile "data.csv"
  case decodeByName csvData of
   Left err -> putStrLn err
-  -- TODO understand the followin code (it's lambda expression I think at the beginning)
   Right (_,v) -> V.forM_ v $ \ p ->
    putStrLn $ date p ++ "," ++ show (expense p) ++ "," ++ show (category p) ++ "," ++ show (description p)
 
