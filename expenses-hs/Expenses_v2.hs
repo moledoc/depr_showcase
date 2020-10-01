@@ -8,9 +8,7 @@ import Data.List.Split -- splitOn
 import Data.Time.Clock
 import Data.Time.Calendar
 
--- Make the csv output in matrix form (each row in csv is row in matrix)
-csvLines :: String -> [[String]]
-csvLines csv = map (splitOn ",") $ filter (\x -> (/=) "" $ take 1 x) $ tail $ lines csv
+import Csv_parser -- import simple csv parser
 
 -- TODO: select 'current month - [0,1,2]'
 
@@ -23,8 +21,3 @@ date = getCurrentTime >>= return . yyyymm . toGregorian . utctDay
 
 -- read $ take 4 "2020-09"
 
-main :: IO ()
-main = do
- -- [file] <- getArgs
- contents <- readFile "data.csv" --file --"data.csv"
- print . csvLines $ contents
