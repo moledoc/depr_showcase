@@ -19,11 +19,11 @@ import Data.List.Split -- splitOn
 csvLines :: String -> [[String]]
 csvLines csv = map (splitOn ",") $ filter (\x -> (/=) "" $ take 1 x) $ tail $ lines csv
 
-parser_compiled :: IO [[String]]
-parser_compiled = do
- [file] <- getArgs
- contents <- readFile file 
- return . csvLines $ contents
+-- parser_compiled :: IO [[String]]
+-- parser_compiled = do
+--  [file] <- getArgs
+--  contents <- readFile file 
+--  return . csvLines $ contents
 
 parser :: FilePath -> IO [[String]]
 parser path = do

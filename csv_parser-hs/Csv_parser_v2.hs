@@ -13,15 +13,16 @@ csv = T.pack "date,exp,type,desc\n2020-01-01,20,test2,test\n2020-01-01,20,test,t
 -- Break Text from newline characters ('\n')
 -- remove header
 -- remove empty lines
+-- Split each line on commas.
 
 csvLines :: T.Text -> [[T.Text]]
 csvLines csv =  map  (T.splitOn $ T.pack ",") $ filter (\x -> (/=) (T.pack "") $ T.take 1 x) $ tail $ T.lines csv
 
-parser_compiled :: IO [[T.Text]]
-parser_compiled = do
- [file] <- getArgs
- contents <- readFile file 
- return . csvLines $ T.pack contents
+-- parser_compiled :: IO [[T.Text]]
+-- parser_compiled = do
+--  [file] <- getArgs
+--  contents <- readFile file 
+--  return . csvLines $ T.pack contents
 
 parser :: FilePath -> IO [[T.Text]]
 parser path = do
