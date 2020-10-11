@@ -31,7 +31,7 @@ main = do
  case decodeByName csvData of
   Left err -> putStrLn err
   Right (_,v) -> V.forM_ v $ \ p ->
-   putStrLn $ date p ++ "," ++ show (expense p) ++ "," ++ show (category p) ++ "," ++ show (description p)
+   putStrLn $ date p ++ "," ++ show (expense p) ++ "," ++ category p ++ "," ++ description p
 
 --
 

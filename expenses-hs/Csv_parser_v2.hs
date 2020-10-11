@@ -1,8 +1,7 @@
 module Csv_parser_v2 where
 
 -- version, that uses Data.Text instead of String
--- import System.IO
-import System.Environment -- getArgs
+-- import System.Environment -- getArgs
 
 import qualified Data.Text as T --hoogle Data.Text 2020-10-10: This module is intended to be imported qualified, to avoid name clashes with Prelude functions
 
