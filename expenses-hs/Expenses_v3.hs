@@ -10,6 +10,9 @@ import Control.Monad -- forM_
 import Control.Monad.State -- State
 import Csv_parser_v2 -- self written simple parser
 
+dataFile :: String
+dataFile = "data.csv"
+
 -- Define new data type Expense
 data Expense = E {
    date        :: T.Text
@@ -123,14 +126,18 @@ add_exp = do
   category    <- get_input "Category of expense:"
   description <- get_input "Description of expense:"
   commit      <- get_input "Commit new expense [y/n]?"
-  let new_exp = make_expense $ map T.pack $ [date,expense,category,description]
+  let new_exp_el = [date,expense,category,description]
+  let new_exp = make_expense $ map T.pack new_exp_el
   if commit == "y" then do
-   -- TODO: change the state of expenses list
+   appendFile dataFile (foldr addComas [] new_exp_el)
    print new_exp
    return "Expense commited"
   else do
    print new_exp
    return "Expense not commited"
+  where 
+   addComas x [] = x ++ "\n"
+   addComas x y  = x ++ "," ++ y
 
 
 
@@ -219,10 +226,9 @@ parse_cmd cmd
 
 
 -- make list of Expenses
--- expenses :: IO ([Expense])
 expenses :: IO String
 expenses = do
- content <- parser "data.csv"
+ content <- parser dataFile
  let expenses_done = map make_expense content
  loop print_help
  --TODO: write new exp to file
