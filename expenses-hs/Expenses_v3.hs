@@ -7,7 +7,7 @@ module Expenses_v3 where
 import qualified Data.Text as T
 import Text.Read -- readMaybe
 import Control.Monad -- forM_
-import Control.Monad.State -- State
+import Control.Monad.State as MS -- State
 import Csv_parser_v2 -- self written simple parser
 
 dataFile :: String
@@ -119,8 +119,8 @@ validDate prompt = do
      | otherwise       = "0"
  
 
-add_exp :: IO String
-add_exp = do
+add_exp :: [Expense] -> IO (String, [Expense])
+add_exp state = do
   date        <- validDate "Date in yyyy-mm format:"
   expense     <- validAmount "Expense amount:"
   category    <- get_input "Category of expense:"
@@ -131,10 +131,10 @@ add_exp = do
   if commit == "y" then do
    appendFile dataFile (foldr addComas [] new_exp_el)
    print new_exp
-   return "Expense commited"
+   return ("Expense commited",new_exp : state)
   else do
    print new_exp
-   return "Expense not commited"
+   return ("Expense not commited",state)
   where 
    addComas x [] = x ++ "\n"
    addComas x y  = x ++ "," ++ y
@@ -179,7 +179,8 @@ category_sum x ys = calculateAmount $ filterCat x ys
    | (==) x (category y) = y : filterCat x ys
    | otherwise = filterCat x ys
 
-report_exp = do
+report_exp :: [Expense] -> IO String
+report_exp state = do
  lwr_bnd <- validDate "Select month to report in format yyyy-mm: "
 
  let lwr_mnth = (!! 1) $ T.splitOn (T.pack "-") $ T.pack lwr_bnd 
@@ -190,11 +191,9 @@ report_exp = do
 
  let lower_bound =  T.pack $ lwr_bnd ++ "-01"
  let upper_bound = T.pack $ (++) upr_bnd_year $ (++) "-" $ (++) upr_bnd_month "-00"
- -- TMP
- content <- parser "data.csv"
- let expenses_done = map make_expense content
-----------
- let report =  filter (< upper_Bound {date = upper_bound}) $ filter (>= lower_Bound {date = lower_bound}) expenses_done
+
+ -- Make list of expenses between the lower and upper bounds.
+ let report =  filter (< upper_Bound {date = upper_bound}) $ filter (>= lower_Bound {date = lower_bound}) state
  -- print report
  putStrLn $ (++) "Total: " $ show $ expense $ calculateAmount report
  -- get all the categories
@@ -204,31 +203,41 @@ report_exp = do
  return "-----------Report end-----------\n"
 
    
-loop :: String -> IO String
-loop x = do
+loop :: String -> [Expense] -> IO String
+loop x state = do
  putStrLn x
  cmd <- get_input "Insert command: "
- parse_cmd cmd
+ parse_cmd cmd state
 
-parse_cmd :: String -> IO String
-parse_cmd cmd
+parse_cmd :: String -> [Expense] -> IO String
+parse_cmd cmd state
  | cmd == "q" = return "Closing the program"
- | cmd == "h" = loop print_help 
- | cmd == "a" = add_exp    >>= loop 
- | cmd == "r" = report_exp >>= loop
- | otherwise  = loop "Unknown command!"
+ | cmd == "h" = loop print_help state
+ | cmd == "a" = add_exp    state >>= (\(prompt,state) -> loop prompt state)
+ | cmd == "r" = report_exp state >>= (\prompt -> loop prompt state)
+ | otherwise  = loop "Unknown command!" state
 
 
 
---STATE: runState func
--- expenseState :: [Expense] -> State Int [Expense]
--- expenseState = runState 
+----STATE: runState func
+--expenseState :: Expense -> State [Expense] [ Expense ]
+--expenseState new = do
+-- cur <- MS.get
+-- put (new:cur)
+-- return cur 
+ 
+--getExpenseState cur = do
+-- cur <- MS.get
+-- return cur
+
+ -- return cur
+-- expenseState :: State Int [Expense]
+-- expenseState = runState [Expense] []
 
 
 -- make list of Expenses
-expenses :: IO String
+-- expenses :: IO String
 expenses = do
  content <- parser dataFile
- let expenses_done = map make_expense content
- loop print_help
- --TODO: write new exp to file
+ let state = map make_expense content
+ loop print_help state

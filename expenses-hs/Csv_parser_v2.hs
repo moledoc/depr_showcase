@@ -26,5 +26,7 @@ csvLines csv =  map  (T.splitOn $ T.pack ",") $ filter (\x -> (/=) (T.pack "") $
 parser :: FilePath -> IO [[T.Text]]
 parser path = do
  contents <- readFile path 
+ -- make haskell to close the file
+ let _ = length contents
  return . csvLines $ T.pack contents
 
