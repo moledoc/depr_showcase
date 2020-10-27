@@ -223,12 +223,13 @@ report_exp state = do
  -- Make list of expenses between the lower and upper bounds.
  let report =  filter (< upper_Bound {date = upper_bound}) $ filter (>= lower_Bound {date = lower_bound}) state
  -- print report
+ putStrLn "\n-----------Report start-----------"
  putStrLn $ (++) "Total: " $ show $ expense $ calculateAmount report
  -- get all the categories
  let report_categories = list_categories report
  -- print report_categories
  forM_ report_categories $ \ cat -> putStrLn $ (++) (" -- " ++ (T.unpack cat) ++ ": ") $ show $ expense $ category_sum cat report 
- return "-----------Report end-----------\n"
+ return "-----------Report end-------------\n"
 
 -- HELPER functions
 
