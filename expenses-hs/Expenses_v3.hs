@@ -70,10 +70,8 @@ get_input prompt = do
  return input
 
 -- Return help value for the implementation.
-print_help :: String --T.Text
+print_help :: String
 print_help = "-- Help -- \n h - show this help \n a - add new expense \n r - report expenses from given \n q - exit program"
--- print_help :: IO ()
--- print_help = putStrLn "-- Help -- \n h - show this help \n a - add new expense \n r - report expenses from given \n q - exit program "
 
 -- validAmount :: String -> IO String
 validAmount prompt = do
@@ -85,43 +83,60 @@ validAmount prompt = do
   putStrLn "Invalid number"
   validAmount prompt
 
-validDate :: String -> IO String
-validDate prompt = do
+ -- TODO: refactor checkYear and checkMonth
+checkYear :: String -> String
+checkYear x = g (readMaybe x :: Maybe Int)
+ where 
+  g Nothing  = "0"
+  g (Just _) = x
+
+checkMonth :: String -> String
+checkMonth x = g (readMaybe x :: Maybe Int)
+ where 
+  g Nothing  = "0"
+  g (Just y)
+   | y <= 12 && y>0  = x
+   | otherwise       = "0"
+
+checkDay :: String -> String -> String -> String
+checkDay day month year = g (readMaybe day :: Maybe Int)
+ where
+  g Nothing = "0"
+  g (Just y)
+   | (elem) month ["01","03","05","07","08","10","12"] && y <= 31      = day
+   | (elem) month ["04","06","09","11"] && y <= 30                     = day
+   | (elem) month ["02"] && y <= 29 && (mod) (read year :: Int) 4 == 0 = day
+   | (elem) month ["02"] && y < 29  && (mod) (read year :: Int) 4 /= 0 = day
+   | otherwise                                                         = "0"
+
+checkDate :: [String] -> Int -> String
+-- checkDate = undefined
+checkDate parts 2 = (checkYear (parts !! 0)) ++ "-" ++ (checkMonth (parts !! 1))
+checkDate parts 3 = (checkYear (parts !! 0)) ++ "-" ++ (checkMonth (parts !! 1)) ++ "-" ++ (checkDay (parts !! 2) (parts !! 1) (parts !! 0))
+
+
+validDate :: String -> Int -> IO String
+validDate prompt n = do
  date <- get_input prompt
  let parts = map T.unpack $ T.splitOn (T.pack "-") $ T.pack date
  let len_parts = length parts
  -- if the number of elements is wrong, then ask the date again.
- if len_parts > 2 || len_parts < 2 then do
+ if len_parts > n || len_parts < n then do
   putStrLn "Invalid date"
-  validDate prompt
-  -- if the number of elements is correct, then check if year and month numbers and month <= 12.
+  validDate prompt n
  else do
-  let year  = checkYear (parts !! 0)
-  let month = checkMonth (parts !! 1)
-  let checkedDate = year ++ "-" ++ month
-  -- if checkedDate is not correct, do ask date again.
-  if checkedDate /= date then do
+  -- if checkDate is not correct, ask date again.
+  if (checkDate parts n) /= date then do
    putStrLn "Invalid date"
-   validDate prompt
-  else do
+   validDate prompt n
+  -- else return date
+  else
    return date
- -- TODO: refactor checkYear and checkMonth
- where
-  checkYear x = g (readMaybe x :: Maybe Int)
-   where 
-    g Nothing  = "0"
-    g (Just _) = x
-  checkMonth x = g (readMaybe x :: Maybe Int)
-   where 
-    g Nothing  = "0"
-    g (Just y)
-     | y <= 12 && y>0  = x
-     | otherwise       = "0"
  
 
 add_exp :: [Expense] -> IO (String, [Expense])
 add_exp state = do
-  date        <- validDate "Date in yyyy-mm format:"
+  date        <- validDate "Date in yyyy-mm-dd format:" 3
   expense     <- validAmount "Expense amount:"
   category    <- get_input "Category of expense:"
   description <- get_input "Description of expense:"
@@ -163,7 +178,6 @@ calculateAmount :: [Expense] -> Expense
 calculateAmount xs = foldr (+) 0 xs
 
 list_categories :: [Expense] -> [T.Text]
--- TODO: Kuidas teha see implementation paremini.
 list_categories xs = f [] $ [(category x) | x <- xs]
  where
   f zs [] = zs
@@ -181,7 +195,7 @@ category_sum x ys = calculateAmount $ filterCat x ys
 
 report_exp :: [Expense] -> IO String
 report_exp state = do
- lwr_bnd <- validDate "Select month to report in format yyyy-mm: "
+ lwr_bnd <- validDate "Select month to report in format yyyy-mm: " 2
 
  let lwr_mnth = (!! 1) $ T.splitOn (T.pack "-") $ T.pack lwr_bnd 
  let lwr_year = (!! 0) $ T.splitOn (T.pack "-") $ T.pack lwr_bnd 
@@ -189,7 +203,7 @@ report_exp state = do
  let upr_bnd_month = parse_le10 $ (+1) $ text2int lwr_mnth
  let upr_bnd_year = upr_bnd_year_fun lwr_mnth lwr_year
 
- let lower_bound =  T.pack $ lwr_bnd ++ "-01"
+ let lower_bound =  T.pack $ lwr_bnd ++ "-00"
  let upper_bound = T.pack $ (++) upr_bnd_year $ (++) "-" $ (++) upr_bnd_month "-00"
 
  -- Make list of expenses between the lower and upper bounds.
@@ -204,8 +218,8 @@ report_exp state = do
 
    
 loop :: String -> [Expense] -> IO String
-loop x state = do
- putStrLn x
+loop prompt state = do
+ putStrLn prompt
  cmd <- get_input "Insert command: "
  parse_cmd cmd state
 

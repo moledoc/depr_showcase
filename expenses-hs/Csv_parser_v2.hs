@@ -4,6 +4,7 @@ module Csv_parser_v2 where
 -- import System.Environment -- getArgs
 
 import qualified Data.Text as T --hoogle Data.Text 2020-10-10: This module is intended to be imported qualified, to avoid name clashes with Prelude functions
+import qualified Data.Text.IO as T -- use strict (instead of lazy) readFile.
 
 -- csv = T.pack "date,exp,type,desc\n2020-01-01,20,test2,test\n2020-01-01,20,test,test\n2020-01-06,20,test,test\n2020-02-01,20,test,test\n\n"
 
@@ -25,8 +26,6 @@ csvLines csv =  map  (T.splitOn $ T.pack ",") $ filter (\x -> (/=) (T.pack "") $
 
 parser :: FilePath -> IO [[T.Text]]
 parser path = do
- contents <- readFile path 
- -- make haskell to close the file
- let _ = length contents
- return . csvLines $ T.pack contents
+ contents <- T.readFile path 
+ return . csvLines $ contents
 
