@@ -1,4 +1,4 @@
-module Expenses where
+module Expenses_v4 where
 
 -- IMPORTS
 import Control.Exception
@@ -7,6 +7,7 @@ import qualified Data.Text.IO as T -- use strict (instead of lazy) readFile.
 import Text.Read -- readMaybe
 import Control.Monad --forM_
 import Data.List -- nub
+import System.IO --hFlush
 
 -- DEFINITIONS
 dataFile :: FilePath
@@ -23,7 +24,7 @@ data Expense = E {
 } deriving (Eq)
 
 instance Show Expense where
- show (E da exp cat de) = show da ++ "," ++ show exp ++ "," ++ (T.unpack cat) ++ "," ++ (T.unpack de) ++ "\n"
+ show (E da exp cat de) = show da ++ "," ++ show exp ++ "," ++ (T.unpack cat) ++ "," ++ (T.unpack de) -- ++ "\n"
 
 instance Ord Expense where
  (<=) (E {expense = e1}) (E {expense = e2}) = e1 <= e2
@@ -52,6 +53,7 @@ readData = do
   Left err -> (putStrLn $ "Could not find file \""++dataFile++"\"!!! Creating data.csv") >> writeFile dataFile dataHeader >> return (T.pack "")
   Right contents -> putStrLn "Data read in!" >> return contents
  
+-- TODO: error handling when parsing the file.
 parseContent :: Monad m => [T.Text] -> m (T.Text, [Expense])
 parseContent contents = do
  let header = head contents
@@ -60,16 +62,15 @@ parseContent contents = do
  where
   getBody b = map makeExpenseText $ map (T.splitOn $ T.pack ",") $ filter (\x -> (/=) (T.pack "") $ T.take 1 x) $ tail b
 
-
 loop :: String -> (T.Text,[Expense]) -> IO ()
 loop prompt state = do
  putStrLn prompt
  cmd <- getInput "Insert command: "
- parseCMD cmd state
+ parseCmd cmd state
 
-parseCMD :: String -> (T.Text,[Expense]) -> IO ()
-parseCMD cmd state
- | cmd == "q"  = putStrLn "Closing the program"
+parseCmd :: String -> (T.Text,[Expense]) -> IO ()
+parseCmd cmd state
+ | cmd == "q"  = putStrLn "Closing program"
  | cmd == "h"  = loop printHelp state
  | cmd == "a"  = addExp            state >>= (\(prompt,state) -> loop prompt state)
  | cmd == "d" = delExp             state >>= (\(prompt,state) -> loop prompt state)
@@ -80,7 +81,7 @@ parseCMD cmd state
  | otherwise  = loop "Unknown command!" state
 
 printHelp :: String
-printHelp = "-- Help -- \n h  - show this help \n a  - add new expense \n d  - delete expense \n rl - show last inserted expenses \n rr - show expenses between range \n rn - report <n> month expenses \n rc - report expenses of chosen category \n q  - exit program"
+printHelp = "-- Help -- \n q  - exit program \n h  - show this help \n a  - add new expense \n d  - delete expense \n rl - show last <nr> inserted expenses \n rr - show expenses between range \n rn - report <nr> month expenses \n rc - report expenses of chosen category"
 
 addExp :: (T.Text,[Expense]) -> IO (String, (T.Text,[Expense]))
 addExp (header,body) = do
@@ -117,7 +118,7 @@ reportRange (header,body) = do
  start <- validDate "Select start date in yyyy-mm-dd format: " 3
  end   <- validDate "Select end date in yyyy-mm-dd format: "   3
  if start>end then do
-  putStrLn "Invalid start date"
+  putStrLn "Start date > end date"
   reportRange (header,body)
  else do
   showRangeExpenses start end body
@@ -127,12 +128,12 @@ reportAfterParams :: (T.Text,[Expense]) -> IO String
 reportAfterParams state = do
  format <- validAmountI "Report with month accuracy (1) or date accuracy (2): "
  if (not $ (elem) format [1,2]) then do
-  putStrLn "Invalid format!"
+  putStrLn "Invalid choice"
   reportAfterParams state
  else do
    n <- validAmountI "Number of months to be reported: "
    if n < 1 then do
-    putStrLn "Invalid number of months!"
+    putStrLn "Invalid number of months"
     reportAfterParams state
    else do
     if format == 1 then
@@ -148,21 +149,20 @@ reportAfter (header,body) n formatI formatS = do
  return $ "Expenses between [" ++ show start ++ ", " ++ show end ++ ") shown"
 
 reportCategory (header,body) = do
- report_init <- listValues categoryList body "category" returnCategoryExpenses
+ reportinit <- listValues categoryList body "category" returnCategoryExpenses
  selectDescription <- getInput "Select description as well? [y/n]: "
- filterDesc <- reportDescription selectDescription report_init
+ filterDesc <- reportDescription selectDescription reportinit
  let report = reverse $ sort filterDesc 
- mapM_ putStr $ map show report
- return "Expenses with category (and desctionrion) shown"
+ mapM_ putStrLn $ map show report --putStr
+ return "Expenses with category (and descrption) shown"
 
 reportDescription :: String -> [Expense] -> IO [Expense]
 reportDescription "y" body = listValues descriptionList body "description" returnDescriptionExpenses
 reportDescription "n" body = return body
-reportDescription _ body = putStrLn "Invalid option" >> getInput "Select description as well? [y/n]: " >>= (\opt -> reportDescription opt body) 
+reportDescription _ body   = putStrLn "Invalid option" >> getInput "Select description as well? [y/n]: " >>= (\opt -> reportDescription opt body) 
   
 
 -- HELP FUNCTIONS
-
 lt10 :: Int -> String
 lt10 n
  | n < 10    = "0"
@@ -170,10 +170,9 @@ lt10 n
 
 getInput :: String -> IO (String)
 getInput prompt = do
- -- putStrLn $ "\n" ++ prompt
  putStr prompt
- input <- getLine
- return input
+ hFlush stdout
+ getLine
 
 makeExpenseText :: [T.Text] -> Expense
 makeExpenseText xs = E{
@@ -204,60 +203,6 @@ makeDateText date = D {
 
 text2Int :: T.Text -> Int
 text2Int x = read ( T.unpack x) :: Int
-
-
-listValues fsel body what ffil= do
- let selection = fsel body
- let nrOfSel = [1..(length selection)]
- mapM_ (\x -> putStrLn $ show x ++ ": " ++ T.unpack ((!! (x-1)) selection)) nrOfSel
- nr <- validAmountI ("Number of "++ what ++ " to be reported: ")
- if nr < 0 || nr > (length selection) then do
-  putStrLn "Invalid number"
-  listValues fsel body what ffil
- else
-  return $ ffil (selection !! (nr-1)) body
-
-showLastNExpenses :: [Expense] -> IO (Int, [Expense])
-showLastNExpenses body = do
- nr <- validAmountI "Show last <nr> inserted expenses: "
- let nrOfExp = min (length body) nr
- let selection = (take nrOfExp [1..],take nrOfExp body)
- mapM_ (\x -> putStr $ show x ++ ": " ++ show ( (!! (x-1)) $ snd selection)) (fst selection)
- return (nrOfExp,snd selection)
-
-
-returnDescriptionExpenses :: T.Text -> [Expense] -> [Expense]
-returnDescriptionExpenses desc body = filter f body
- where
-  f exp = g desc exp
-  g cat (E {description = desc1})
-   | desc == desc1 = True
-   | otherwise     = False
-
-returnCategoryExpenses :: T.Text -> [Expense] -> [Expense]
-returnCategoryExpenses cat body = filter f body
- where
-  f exp = g cat exp
-  g cat (E {category = cat1})
-   -- | (T.toUpper cat) == (T.toUpper cat1) = True
-   | cat == cat1 = True
-   | otherwise   = False
-
-returnRangeExpenses :: Date -> Date -> [Expense] -> [Expense]
-returnRangeExpenses start end body = filter f body
- where
-  f exp = g start end exp
-  g start end (E {date = d1})
-   | start <= d1 && d1 < end = True
-   | otherwise               = False
-
-showRangeExpenses :: Date -> Date -> [Expense] -> IO ()
-showRangeExpenses start end body = do
-  let report = returnRangeExpenses start end body
-  let categorylist = categoryList report
-  putStrLn $ (++) "Total: " $ show $ calculateExpense report
-  -- forM_ categorylist $ (\cat -> putStrLn $ (++) (" -- " ++ (T.unpack cat) ++ ": ") $ show $ calculateExpense $ filter (\ E {category = xcat} -> xcat == cat) report)
-  forM_ categorylist $ (\cat -> putStrLn $ (++) (" -- " ++ (T.unpack cat) ++ ": ") $ show $ calculateExpense $ returnCategoryExpenses cat report)
 
 calculateExpense :: [Expense] -> Double
 calculateExpense xs = foldr (\E {expense = exp} acc -> exp + acc) 0 xs
@@ -295,13 +240,13 @@ validDate prompt n = do
  date <- getInput prompt
  let parts = map T.unpack $ T.splitOn (T.pack "-") $ T.pack date
  if (length parts) /= n then do
-  putStrLn "Invalid Date"
+  putStrLn "Invalid date format"
   validDate prompt n
  else do
    areValidNumbers <- yyyymmddDate $ map isValidInt parts
    isValidDate <- checkDate areValidNumbers
    if (not isValidDate) then do
-    putStrLn "Invalid Date"
+    putStrLn "Invalid date"
     validDate prompt n
    else do
     let validDateNumbers = map (\(Just x) -> x) areValidNumbers
@@ -309,9 +254,9 @@ validDate prompt n = do
    
 yyyymmddDate :: [Maybe Int] -> IO [Maybe Int]
 yyyymmddDate date = do
- if ( length date ) == 2 then do
+ if ( length date ) == 2 then
   return $ date ++ [ Just 1 ]
- else do
+ else
   return date
 
 checkDate :: [Maybe Int] -> IO Bool
@@ -357,3 +302,56 @@ dateAfter (D {year = y, month = m, day = d}) n = do
  else
   makeDateInt [year,month,d]
   
+showLastNExpenses :: [Expense] -> IO (Int, [Expense])
+showLastNExpenses body = do
+ nr <- validAmountI "Show last <nr> inserted expenses: "
+ let nrOfExp = min (length body) nr
+ let selection = (take nrOfExp [1..],take nrOfExp body)
+ mapM_ (\x -> putStrLn $ show x ++ ": " ++ show ( (!! (x-1)) $ snd selection)) (fst selection) -- putStr
+ return (nrOfExp,snd selection)
+
+returnRangeExpenses :: Date -> Date -> [Expense] -> [Expense]
+returnRangeExpenses start end body = filter f body
+ where
+  f exp = g start end exp
+  g start end (E {date = d1})
+   | start <= d1 && d1 < end = True
+   | otherwise               = False
+
+showRangeExpenses :: Date -> Date -> [Expense] -> IO ()
+showRangeExpenses start end body = do
+  let report = returnRangeExpenses start end body
+  let categorylist = categoryList report
+  putStrLn $ (++) "Total: " $ show $ calculateExpense report
+  -- forM_ categorylist $ (\cat -> putStrLn $ (++) (" -- " ++ (T.unpack cat) ++ ": ") $ show $ calculateExpense $ filter (\ E {category = xcat} -> xcat == cat) report)
+  forM_ categorylist $ (\cat -> putStrLn $ (++) (" -- " ++ (T.unpack cat) ++ ": ") $ show $ calculateExpense $ returnCategoryExpenses cat report)
+
+returnCategoryExpenses :: T.Text -> [Expense] -> [Expense]
+returnCategoryExpenses cat body = filter f body
+ where
+  f exp = g cat exp
+  g cat (E {category = cat1})
+   -- | (T.toUpper cat) == (T.toUpper cat1) = True
+   | cat == cat1 = True
+   | otherwise   = False
+
+returnDescriptionExpenses :: T.Text -> [Expense] -> [Expense]
+returnDescriptionExpenses desc body = filter f body
+ where
+  f exp = g desc exp
+  g cat (E {description = desc1})
+   | desc == desc1 = True
+   | otherwise     = False
+
+listValues :: (t -> [T.Text]) -> t -> [Char] -> (T.Text -> t -> b) -> IO b
+listValues fsel body what ffil = do
+ let selection = fsel body
+ let nrOfSel = [1..(length selection)]
+ mapM_ (\x -> putStrLn $ show x ++ ": " ++ T.unpack ((!! (x-1)) selection)) nrOfSel
+ nr <- validAmountI ("Number of "++ what ++ " to be reported: ")
+ if nr < 0 || nr > (length selection) then do
+  putStrLn "Invalid number"
+  listValues fsel body what ffil
+ else
+  return $ ffil (selection !! (nr-1)) body
+
