@@ -48,35 +48,35 @@ ghc --make-dynamic Expenses_v4
 
 Interactive commands in the program:
 
-q  - exits the program
+* q  - exits the program
 
-h  - shows help
+* h  - shows help
 
-a  - adds new expense. 
+* a  - adds new expense. 
   
-  The program asks the date, expense, category and description. 
-  If invalid date/expense is given, program asks them until valid date/expense is given.
+  	The program asks the date, expense, category and description. 
+  	If invalid date/expense is given, program asks them until valid date/expense is given.
   
-d  - deletes expense.
+* d  - deletes expense.
 
-  Program asks how many latest expenses user wants to see. User can choose among those expenses, which one he/she wants to delete.
+  	Program asks how many latest expenses user wants to see. User can choose among those expenses, which one he/she wants to delete.
   
-rl - show last <nr> inserted expenses
+* rl - show last <nr> inserted expenses
 
-  Program asks how many latest expenses user wants to see and shows them.
+  	Program asks how many latest expenses user wants to see and shows them.
 
-rr - show expenses between range
+* rr - show expenses between range
 
-  Program asks start and end date in format yyyy-mm-dd. If invalid date values are given, program asks until valid values are given or program is exited.
+  	Program asks start and end date in format yyyy-mm-dd. If invalid date values are given, program asks until valid values are given or program is exited.
   
-rn - report <nr> month expenses
+* rn - report <nr> month expenses
 
-  Program asks format type (yyyy-mm or yyyy-mm-dd), number of months to be reported and starting date. Shows total grouped by category expenses during given period.
+  	Program asks format type (yyyy-mm or yyyy-mm-dd), number of months to be reported and starting date. Shows total grouped by category expenses during given period.
 
-rc - report expenses of chosen category (in descending order)
+* rc - report expenses of chosen category (in descending order)
 
-  Program asks user which category he/she wants to report (gives a list of available categories). 
-  Also asks whether user wants to select specific description or not. If yes, then shows available descriptions for given category. Shows all expenses with chosen category (and chosen description) in descending order.
+  	Program asks user which category he/she wants to report (gives a list of available categories). 
+  	Also asks whether user wants to select specific description or not. If yes, then shows available descriptions for given category. Shows all expenses with chosen category (and chosen description) in descending order.
 
 Data is read from file 'data.csv', that needs to exist in the same directory as the program.
 If file 'data.csv' does not exist in the same directory as the running file, the program will create the file with necessary heading.
