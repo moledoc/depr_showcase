@@ -26,8 +26,8 @@ data Expense = E {
 instance Show Expense where
  show (E da exp cat de) = show da ++ "," ++ show exp ++ "," ++ (T.unpack cat) ++ "," ++ (T.unpack de) -- ++ "\n"
 
-instance Ord Expense where
- (<=) (E {expense = e1}) (E {expense = e2}) = e1 <= e2
+-- instance Ord Expense where
+--  (<=) (E {expense = e1}) (E {expense = e2}) = e1 <= e2
 
 data Date = D {
    year  :: Int
@@ -38,6 +38,7 @@ data Date = D {
 instance Show Date where
  show (D y m d) = show y ++ "-" ++ (lt10 m) ++ show m ++ "-" ++ (lt10 d) ++ show d
 
+type Header = T.Text
 
 -- MAIN FUNCTIONS
 main :: IO ()
@@ -62,18 +63,18 @@ parseContent contents = do
  where
   getBody b = map makeExpenseText $ map (T.splitOn $ T.pack ",") $ filter (\x -> (/=) (T.pack "") $ T.take 1 x) $ tail b
 
-loop :: String -> (T.Text,[Expense]) -> IO ()
+loop :: String -> (Header,[Expense]) -> IO ()
 loop prompt state = do
  putStrLn prompt
  cmd <- getInput "Insert command: "
  parseCmd cmd state
 
-parseCmd :: String -> (T.Text,[Expense]) -> IO ()
+parseCmd :: String -> (Header,[Expense]) -> IO ()
 parseCmd cmd state
  | cmd == "q"  = putStrLn "Closing program"
  | cmd == "h"  = loop printHelp state
  | cmd == "a"  = addExp            state >>= (\(prompt,state) -> loop prompt state)
- | cmd == "d" = delExp             state >>= (\(prompt,state) -> loop prompt state)
+ | cmd == "d"  = delExp            state >>= (\(prompt,state) -> loop prompt state)
  | cmd == "rl" = reportShow        state >>= (\prompt -> loop prompt state)
  | cmd == "rr" = reportRange       state >>= (\prompt -> loop prompt state)
  | cmd == "rn" = reportAfterParams state >>= (\prompt -> loop prompt state)
@@ -83,7 +84,7 @@ parseCmd cmd state
 printHelp :: String
 printHelp = "-- Help -- \n q  - exit program \n h  - show this help \n a  - add new expense \n d  - delete expense \n rl - show last <nr> inserted expenses \n rr - show expenses between range \n rn - report <nr> month expenses \n rc - report expenses of chosen category"
 
-addExp :: (T.Text,[Expense]) -> IO (String, (T.Text,[Expense]))
+addExp :: (Header,[Expense]) -> IO (String, (Header,[Expense]))
 addExp (header,body) = do
  date        <- validDate "Date in yyyy-mm-dd format: " 3
  expense     <- validAmountD "Expense amount: "
@@ -94,26 +95,26 @@ addExp (header,body) = do
  appendFile dataFile (show newexp)
  return ("Expense added: " ++ show newexp,(header,newbody))
 
-delExp :: (T.Text,[Expense]) -> IO (String, (T.Text,[Expense]))
+delExp :: (Header,[Expense]) -> IO (String, (Header,[Expense]))
 delExp (header,body) = do
  (nrOfExp,selection) <- showLastNExpenses body
  nrOfDel <- validAmountI "Delete expense nr: "
- if nrOfDel >= nrOfExp  || nrOfDel < 0 then do
+ if nrOfDel >= nrOfExp  || nrOfDel < 1 then do
   putStrLn "Invalid number"
   delExp (header,body)
  else do
-  let exclude = selection !! nrOfDel
+  let exclude = selection !! (nrOfDel-1)
   let newbody = filter (/= exclude) body
   writeFile dataFile dataHeader
-  forM_ newbody $ (\line -> appendFile dataFile (show line))
+  forM_ newbody $ (\line -> appendFile dataFile (show line ++ "\n"))
   return ("Expense deleted",(header,newbody))
 
-reportShow :: (T.Text,[Expense]) -> IO String
+reportShow :: (Header,[Expense]) -> IO String
 reportShow (header,body) = do
  (nrOfExp,selection) <- showLastNExpenses body
  return $ "Last " ++ show nrOfExp ++ " inserted expenses shown"
 
-reportRange :: (T.Text,[Expense]) -> IO String
+reportRange :: (Header,[Expense]) -> IO String
 reportRange (header,body) = do
  start <- validDate "Select start date in yyyy-mm-dd format: " 3
  end   <- validDate "Select end date in yyyy-mm-dd format: "   3
@@ -124,7 +125,7 @@ reportRange (header,body) = do
   showRangeExpenses start end body
   return $ "Expenses between [" ++ show start ++ ", " ++ show end ++ ") shown"
 
-reportAfterParams :: (T.Text,[Expense]) -> IO String
+reportAfterParams :: (Header,[Expense]) -> IO String
 reportAfterParams state = do
  format <- validAmountI "Report with month accuracy (1) or date accuracy (2): "
  if (not $ (elem) format [1,2]) then do
@@ -141,7 +142,7 @@ reportAfterParams state = do
     else
      reportAfter state n (format+1) "-dd"
      
-reportAfter :: (T.Text,[Expense]) -> Int -> Int -> String -> IO String
+reportAfter :: (Header,[Expense]) -> Int -> Int -> String -> IO String
 reportAfter (header,body) n formatI formatS = do
  start <- validDate ("Select month in yyyy-mm"++ formatS ++ " format: ") formatI
  let end = dateAfter start n
@@ -152,7 +153,7 @@ reportCategory (header,body) = do
  reportinit <- listValues categoryList body "category" returnCategoryExpenses
  selectDescription <- getInput "Select description as well? [y/n]: "
  filterDesc <- reportDescription selectDescription reportinit
- let report = reverse $ sort filterDesc 
+ let report = reverse $ sortBy (\E{expense = e1} E{expense = e2} -> compare e1 e2) filterDesc 
  mapM_ putStrLn $ map show report --putStr
  return "Expenses with category (and descrption) shown"
 
@@ -306,7 +307,7 @@ showLastNExpenses :: [Expense] -> IO (Int, [Expense])
 showLastNExpenses body = do
  nr <- validAmountI "Show last <nr> inserted expenses: "
  let nrOfExp = min (length body) nr
- let selection = (take nrOfExp [1..],take nrOfExp body)
+ let selection = (take nrOfExp [1..],take nrOfExp $ reverse body)
  mapM_ (\x -> putStrLn $ show x ++ ": " ++ show ( (!! (x-1)) $ snd selection)) (fst selection) -- putStr
  return (nrOfExp,snd selection)
 
