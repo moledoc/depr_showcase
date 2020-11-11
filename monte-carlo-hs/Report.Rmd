@@ -1,0 +1,248 @@
+---
+title: Parallelism in Haskell
+subtitle: Parallel computing
+author: Meelis Utt
+date: 2020-11-11
+header-includes:
+  - \usepackage{hyperref}
+  - \usepackage{amssymb}
+output: pdf_document
+---
+
+
+\newcommand{\refr}[1]{
+(\ref{#1})
+}
+
+```{r,include=F,echo=F}
+# load necessary package
+```
+
+```{r,include=F}
+knitr::opts_chunk$set(fig.width = 6, fig.heighta = 4)
+```
+
+\section*{Introduction}
+For this report I chose Haskell programming language, as I am currently very interested in it.
+Haskell is stronly general-purpose, strongly typed, lazily evaluated purely functional programming language $\refr{realworkhaskell1}$.
+Haskell separates pure functions and functions with side efects.
+Pure function is a function, that gives same output for same input every time, meaning it is deterministic $\refr{wikipure}$.
+Side efect can be printing to standard output, sending data over network, generating random number etc.
+It started in the academia, meaning scientist were the ones who mostly developed it in the beginning.
+In Haskell there is two types of parallelism: pure parallelism and concurrency $\refr{wikipar}$.
+I also found packages (haskell-mpi,mpi-hs), that use MPI for parallelization.
+I found some mentions of OpenMP in Haskell, but I did not research this currently.
+I planned on using MPI solution at first, but I had a dependecy issue, that I was unable to not resolve.
+Since the example of Monte-Carlo solution I made for this report is more aligned with pure parallelism, then I will be focusing more on this.
+Although, reading the materials gave me an impression, that concurrency is really useful in networking $\refr{realworkhaskell24}$.
+I would like to share link to a video about concurrency in haskell, that I found really useful and interesting $\refr{concurvid}$.
+\newline
+I used Haskell package called parallel, which is part of the pure parallelism I mentioned before.
+Pure parallelism has the advantages of
+\begin{itemize}
+  \item Guaranteed deterministic (same result every time);
+  \item no race conditions or deadlocks $\refr{wikipar}$
+\end{itemize}
+Since Haskell is lazy language and has immutable variables, then it is possible to take a normal Haskell function, apply a few simple transformations to it, and have it evaluated in parallel $\refr{realworkhaskell24}$.
+This video $\refr{parvid}$ helped me understand this subject better and gave some examples of good and bad parallelism.
+When making my parallel implementation of this Monte-Carlo example, I had a lot of trouble of getting the implementation reasonable in a way that gave me speedup. 
+In Haskell package \textit{parallel} the parallelism is handled by the runtime system (RTS) and things calles \textit{Spark}'s are used.
+Spark is something that takes some unevaluated data and evaluates it in parallel.
+When spark is created, it is put into the \textit{spark pool}, which is Haskell Execution Contect (HEC).
+One HEC is roughly equivalent to one core on ones machine.
+For more indepth overview of sparks, I once again recommend this $\refr{parvid}$ video.
+Before moving on to the examples, I want to mention that there is a greate tool $\refr{sparktool}$ for spark event analysis, that I unfortunatly did not use during this example.
+Also, I want to mention that since the package is currently marked (at the time of writing) experimental, then there exists possibility that some functions may change.
+However, since the package is fairly popular, then there is small probability for a major change.
+\section*{Example}
+First let's look at the setup of the example.
+In this example, we want to find the mean value of the function
+\[
+  f(x) = x^2 + x^4 + \sin(x) + \cos(x) + x^25.
+\]
+This function was chosen, because it is fairly simple to find the mean analytically, but it still gives some computational complexity when using the Monte-Carlo method.
+The mean can be calculate analytically using the formula
+\[
+  E(f(x)) = \int_{a}^{b} f(x)dx.
+\]
+In my example, I used uniform distribution $X\sim U(0,1)$ to generate the random values in the Monte-Carlo method.
+So the analytically we get
+\[
+  E(f(x)) = \int_{0}^{1} f(x)dx 
+    = \int_{0}^{1} x^2 + x^4 + \sin(x) + \cos(x) + x^25 dx
+    = \frac{613}{390} + \sin(1) - \cos(1) \approx 1.8729635507346285.
+\]
+I implemented the function, analytical solution and generator of uniform distribution values separately from the MC examples and imported compiled code.
+I compile both serial and parallel code with command
+\begin{verbatim}
+stack ghc -- -threaded -rtsopts -eventlog -main-is MC<type> MC<type>.hs
+\end{verbatim}
+and ran with command
+\begin{verbatim}
+./MC<type> <n> +RTS -N
+or
+./MC<type> <n> +RTS -N -s
+\end{verbatim}
+In case of serial code, the flags \textit{+RTS} and textit{-N} do nothing,
+but for the sake of comparability I added them.
+In case of parallel program, the flag \textit{-N} specifies how many cores are used.
+If there is no number specified in the flag (eg -N2), then the maximum number of cores are used.
+The \textit{-s} option gives more info about the running of the program and 
+\textit{-ls} would create a file, that could be used in the spark analysis tool I mentioned.
+For example, the flag \textit{-s} gives us output
+```{sh}
+./MCserial 100 +RTS -N -s
+```
+```{sh}
+./MCparallel 100 +RTS -N -s
+```
+As we can see from the example, the serial code was faster than the parallel code in case of $100$ iterations ($0.011sec$ vs $0.041sec$ elapsed).
+However, in Monte-Carlo method it is usual to run the code with bigger $n$.
+Let's try running the code with $n = 10^3,10^4,\dotso,10^7$.
+We get\
+<TODO>
+
+Now let's try running the serial and parallel code in the course VM.
+We get\
+<TODO>
+
+
+
+
+\newpage
+\section*{Code}
+Function code:
+\begin{verbatim}
+module Function where
+
+-- Define a function, that has some complexity, 
+-- so that parallel computation might give better results,
+-- but is still fairly simple to analytically calculate the exact answer.
+f :: Double -> Double
+f x = x^2 + x^4 + (sin x) + (cos x) + (x^25)
+
+-- We assume that random variables are taken from uniform distribution U(0,1).
+-- This means we can calculate the mean (EX) as 
+-- integral from 0 to 1 of the function f(x).
+analytical :: Double
+analytical = 613/390 + (sin 1) - (cos 1)
+\end{verbatim}
+Generator code:
+\begin{verbatim}
+module GenUnif where
+
+import Control.Monad (replicateM)
+import Control.Monad.Random (uniform)
+
+size :: Double
+size = 1000000
+
+lower :: Double
+lower = 0
+upper :: Double
+upper = 1
+step :: Double
+step = 0.001
+
+valList :: [Double]
+valList = [lower,lower+step..upper]
+
+unif :: Int -> IO [Double]
+unif n = replicateM n $ uniform vals
+ where
+  vals = valList
+\end{verbatim}
+Serial implementation:
+\begin{verbatim}
+module MCserial where
+
+import System.Environment (getArgs)
+import GenUnif
+import Function
+
+mc :: (Integer,Double) -> [Double] -> Double
+mc (n,summed) []     = summed/(fromIntegral n)
+mc (n,summed) (x:xs) = mc (n+1,summed+(f x)) xs 
+
+main = do
+ -- let n = 10000
+ -- read number of mc iterations n.
+ [nstr] <- getArgs
+ let n = read nstr :: Int
+ -- generate list of n random values from uniform distribution U(0,1).
+ xs <- unif n
+ -- calculate mc result
+ let result = mc (0,0) xs
+ -- calculate error
+ let error = abs $ result - analytical
+ -- check if error >0.05. If not, then print the result.
+ if (error > 0.05) then do
+  putStrLn "Incorrect answer, error > 0.05!"
+ else do
+  putStrLn "result,error,analytical"
+  putStrLn $ (show result) ++ "," ++ (show error)++ "," ++ (show analytical)
+\end{verbatim}
+Parallel implementation:
+\begin{verbatim}
+module MCparallel where
+
+import System.Environment (getArgs)
+import Control.Parallel.Strategies
+import Control.Monad
+import GenUnif
+import Function
+
+mc :: (Integer,Double) -> [Double] -> Double
+mc (n,summed) []     = summed/(fromIntegral n)
+mc (n,summed) (x:xs) = mc (n+1,summed+(f x)) xs 
+
+main = do
+ -- read number of mc iterations n and the number 
+ -- that we use to divide n into chunks
+ -- In my testing I found that best speedup is achieved, 
+ -- if n/p is in the interval [25,50].
+ -- However, using n/p=100 gives more stable answer, 
+ -- meaning error more than 0.05 is less likely. 
+ -- Also, correct answer is calculated in case of with smaller n.
+ -- [nstr,pstr] <- getArgs
+ [nstr] <- getArgs
+ let n = read nstr :: Int
+ -- let p = read pstr :: Int
+ let p = (div) n 50
+ let nchunk = (div) n p
+ -- make double nchuck value.
+ -- Since we find means of sublists, 
+ -- then getting the correct final result can be calculated as
+ -- sum(intermediate means)/nchuck
+ let nchunkd = fromIntegral nchunk
+ -- generate list of list with total of n random values 
+ -- from uniform distribution U(0,1)
+ xs <- replicateM nchunk (unif nchunk)
+ -- calculate intermediate means.
+ let resultchunk = parMap rseq (\ys -> mc (0,0) ys) xs
+ -- calculate final result.
+ let result = sum(resultchunk)/nchunkd
+ -- calculate error
+ let error = abs $ result - analytical
+ print (result,analytical,error)
+ -- check if error >0.05. If not, then print the result.
+ if (error > 0.05) then do
+  putStrLn "Incorrect answer, error > 0.05!"
+ else do
+  putStrLn "result,error,analytical"
+  putStrLn $ (show result) ++ "," ++ (show analytical) ++ "," ++ (show error)
+\end{verbatim}
+
+
+\newpage
+\section*{Used literature}
+\begin{enumerate}
+  \item \url{http://book.realworldhaskell.org/}, 2020-11-11\label{realworkhaskell1}
+  \item \url{https://wiki.haskell.org/Parallelism}, 2020-11-11\label{wikipar}
+  \item \url{http://book.realworldhaskell.org/read/concurrent-and-multicore-programming.html}, 2020-11-11\label{realworkhaskell24}
+  \item \url{https://wiki.haskell.org/Pure}, 2020-11-11\label{wikipure}
+  \item \url{https://www.youtube.com/watch?v=cuHD2qTXxL4}, 2020-11-11\label{concurvid}
+  \item \url{https://www.youtube.com/watch?v=R47959rD2yw}, 2020-11-11\label{parvid}
+  \item \url{https://wiki.haskell.org/ThreadScope_Tour/Spark}, 2020-11-11\label{sparktool}
+\end{enumerate}
+
