@@ -17,6 +17,4 @@ valList :: [Double]
 valList = [lower,lower+step..upper]
 
 unif :: Int -> IO [Double]
-unif n = replicateM n $ uniform vals
- where
-  vals = valList
+unif n = replicateM n $ uniform $! valList

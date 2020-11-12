@@ -3,8 +3,11 @@ module MCparallel where
 import System.Environment (getArgs)
 import Control.Parallel.Strategies
 import Control.Monad
+
+-- self defined
 import GenUnif
 import Function
+import Timing
 
 mc :: (Integer,Double) -> [Double] -> Double
 mc (n,summed) []     = summed/(fromIntegral n)
@@ -17,6 +20,8 @@ main = do
  -- [nstr,pstr] <- getArgs
  [nstr] <- getArgs
  let n = read nstr :: Int
+ -- start time
+ start <- timing
  -- let p = read pstr :: Int
  let p = (div) n 50
  let nchunk = (div) n p
@@ -25,16 +30,26 @@ main = do
  -- sum(intermediate means)/nchuck
  let nchunkd = fromIntegral nchunk
  -- generate list of list with total of n random values from uniform distribution U(0,1)
- xs <- replicateM nchunk (unif nchunk)
+ xs <- unif p
+ -- xs <- replicateM nchunk $! unif p
  -- calculate intermediate means.
- let resultchunk = parMap rseq (\ys -> mc (0,0) ys) xs
+ let resultchunk = parMap rseq (\_ -> mc (0,0) xs) $! [1..nchunk] 
+ -- let resultchunk = parMap rseq (\ys -> mc (0,0) ys) xs
  -- calculate final result.
  let result = sum(resultchunk)/nchunkd
  -- calculate error
  let error = abs $ result - analytical
- -- check if error >0.05. If not, then print the result.
- if (error > 0.05) then do
-  putStrLn "Incorrect answer, error > 0.05!"
+ if n > 999 then do
+  putStr $ (show n) ++ "," ++ (show result) ++ "," ++ (show analytical) ++ "," ++ (show error) ++ ",parallel,"
+  -- end time
+  end <- timing
+  -- calculate time
+  let time = diffTime end start
+  putStrLn $ (show time)
  else do
-  putStrLn "result,error,analytical"
-  putStrLn $ (show result) ++ "," ++ (show analytical) ++ "," ++ (show error)
+   -- check if error >0.05. If not, then print the result.
+   if (error > 0.05) then do
+    putStrLn $ "Incorrect answer, error > 0.05! Error: " ++ (show error)
+   else do
+    putStrLn "result,error,analytical"
+    putStrLn $ (show result) ++ "," ++ (show analytical) ++ "," ++ (show error)
