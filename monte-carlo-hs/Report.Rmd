@@ -18,6 +18,7 @@ output: pdf_document
 # load necessary package
 library(ggplot2)
 library(dplyr)
+library(parallel)
 ```
 
 ```{r,include=F}
@@ -75,9 +76,12 @@ So the analytically we get
     = \int_{0}^{1} x^2 + x^4 + \sin(x) + \cos(x) + x^25 dx
     = \frac{613}{390} + \sin(1) - \cos(1) \approx 1.8729635507346285.
 \]
+
+
 I implemented the function, analytical solution, generator of uniform distribution values and timing functinos separately from the MC examples and imported the compiled code to serial and parallel examples.
-At first I parallelised the calculation of mean and it gave some speedup.
-Later I parallelised also the generation of random numbers. This gave me better speedup, but gives more unstable answers, when $n$ is small (this might be seen from the numberical example as well).
+At first I parallelised the calculation of mean.
+Later I also tried to parallelize the generation of random numbers.
+However, I did not succeed in getting very good parallelization.
 I compile both serial and parallel code with command
 \begin{verbatim}
 stack ghc -- -threaded -rtsopts -eventlog -main-is MC<type> MC<type>.hs
@@ -105,12 +109,12 @@ For example, the flag \textit{-s} gives us output
 
 As we can see from this example, the codes ran roughly at the same speed (although the error on parallel program might be bit more than $0.05$ in some cases).
 However, in Monte-Carlo method it is usual to run the code with bigger $n$.
-Let's try running the code with $n = 10^3,5\cdot10^3,10^4,5\cdot10^4,\dotso,50^6$.
+Let's try running the code with $n = 10^3,5\cdot10^3,10^4,5\cdot10^4,\dotso,10^7$.
 We get
 
 ```{sh}
 rm -f results.csv
-for n in 1000 5000 10000 50000 100000 1000000 5000000
+for n in 1000 5000 10000 50000 100000 1000000 5000000 10000000
 do
   ./MCserial $n +RTS -N >> results.csv
   ./MCparallel $n +RTS -N >> results.csv
@@ -165,58 +169,148 @@ ggplot(data=relative, aes(x=n,y=relative.speedup,color=type,group=type)) +
   guides(color=guide_legend(title="Type"))
 ```
 
-As we can see, we gain better speedups when $n$ increases.
-The best speedup we gained was `r relative[relative$relative.speedup == max(relative$relative.speedup),relative.speedup]`.
-\newline
-Now let's try the same in the course VM.
+As we can see, the speedup converges arount $1.8$.
+The best speedup we gained was `r relative[relative$relative.speedup == max(relative$relative.speedup),"relative.speedup"]`.\
+I did not achieve very good speedup with this example.
+I think it is possible to get better speedups, if generation of random numbers is parallelized better.
+Furthermore, I think that generation of random numbers is done in an inefficient why.
+Unfortunately, I was unable to improve the generation.
+To put into perspective, I put together a simple serial and parallel MC method implementation in R.
+Since R is dynamic language, it should be slower.
+Let's compare the relative speedups of the quick serial and parallel R implementation against this Haskell example.
 We get
 
 ```{r}
-# data <- read.csv("results_VM.csv",header=F,stringsAsFactors=F) %>%
-#   setNames(c("n","result","analytical","error","type","time"))
-# data
-# ggplot(data=data, aes(x=n,y=time,color=type,group=type)) +
-#   geom_point() +
-#   geom_line() +
-#   labs(
-#        title="Serial vs parallel in VM",
-#        x="Nr of iterations",
-#        y="Walltime (sec)"
-#        ) +
-#   theme(
-#         plot.title = element_text(hjust = 0.5),
-#         plot.subtitle = element_text(hjust = 0.5)
-#        ) +
-#   guides(color=guide_legend(title="Type"))
+f <- function(x){
+  return(x**2 + x**4+ sin(x) + cos(x) +x**25)
+}
+analytical <- 613/390 + sin(1) - cos(1)
+powers <- 3:7
+iterations <- rep(c(1,5),each=length(powers))*10**(powers)
+iterations <- iterations[-length(iterations)]
+# serial
+null <- lapply(iterations,function(n){
+    start <- Sys.time()
+    i <- runif(n,0,1)
+    EX <- mean(f(i))
+    end <- Sys.time()
+    time <- difftime(end,start)
+    error <- EX - analytical
+    write.table(file = "results.csv",
+                x = paste(n,EX,analytical,error,"R serial",time,sep = ","),
+                append = TRUE,col.names=F,row.names=F,quote=F)
+  }
+)
+
+library(parallel)
+#parallel
+null <- sapply(iterations,function(n){
+  start <- Sys.time()
+  # Calculate the number of cores
+  no_cores <- detectCores()
+  start <- Sys.time()
+  
+  # Initiate cluster
+  cl <- makeCluster(no_cores)
+  
+  intermean <- parSapply(cl, rep(n/no_cores,no_cores),function(n,f){
+    i <- runif(n,0,1)
+    EX <- mean(f(i))
+    
+  },f
+  )
+  stopCluster(cl)
+  EX <- mean(intermean)
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical
+    write.table(file = "results.csv",
+                x = paste(n,EX,analytical,error,"R parallel",time,sep = ","),
+                append = TRUE,col.names=F,row.names=F,quote=F)
+})
 ```
 
 ```{r}
-# par <- data[data$type=="parallel",]
-# ser <- data[data$type=="serial",]
-# relative <- dplyr::inner_join(par,ser,by="n") %>% 
-#   mutate(
-#     type = "relative speedup",
-#     relative.speedup = time.y/time.x
-#   ) %>% 
-#   select(n,type,relative.speedup)
-# relative
-# ggplot(data=relative, aes(x=n,y=relative.speedup,color=type,group=type)) +
-#   geom_point() +
-#   geom_line() +
-#   labs(
-#        title="Serial vs parallel in VM",
-#        x="Nr of iterations",
-#        y="Relative speedup"
-#        ) +
-#   theme(
-#         plot.title = element_text(hjust = 0.5),
-#         plot.subtitle = element_text(hjust = 0.5)
-#        ) +
-#   guides(color=guide_legend(title="Type"))
+data <- read.csv("results.csv",header=F,stringsAsFactors=F) %>%
+  setNames(c("n","result","analytical","error","type","time"))
+data %>% arrange(n,type)
+
+par <- data[data$type=="parallel",]
+Rser <- data[data$type=="R serial",]
+Rpar <- data[data$type=="R parallel",]
+
+parRser <- dplyr::inner_join(Rser,par,by="n") %>%
+  mutate(
+    type = "Haskell parallel vs R serial",
+    relative.speedup = time.y/time.x
+  ) %>% 
+  select(n,type,relative.speedup)
+
+parRpar <- dplyr::inner_join(Rpar,par,by="n") %>%
+  mutate(
+    type = "Haskell parallel vs R parallel",
+    relative.speedup = time.y/time.x
+  ) %>% 
+  select(n,type,relative.speedup)
+
+RparRser <- dplyr::inner_join(Rpar,Rser,by="n") %>%
+  mutate(
+    type = "serial vs parallel R",
+    relative.speedup = time.y/time.x
+  ) %>% 
+  select(n,type,relative.speedup)
+
+relative <- dplyr::union_all(parRser,parRpar) %>%
+  dplyr::union_all(RparRser)
+relative
+
+ggplot(data=parRser, aes(x=n,y=relative.speedup,color=type,group=type)) +
+  geom_point() +
+  geom_line() +
+  labs(
+       title="Parallel Haskell vs serial R",
+       x="Nr of iterations",
+       y="Relative speedup"
+       ) +
+  theme(
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)
+       ) +
+  guides(color=guide_legend(title="Type"))
+
+ggplot(data=parRpar, aes(x=n,y=relative.speedup,color=type,group=type)) +
+  geom_point() +
+  geom_line() +
+  labs(
+       title="Parallel Haskell vs R",
+       x="Nr of iterations",
+       y="Relative speedup"
+       ) +
+  theme(
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)
+       ) +
+  guides(color=guide_legend(title="Type"))
+
+ggplot(data=RparRser, aes(x=n,y=relative.speedup,color=type,group=type)) +
+  geom_point() +
+  geom_line() +
+  labs(
+       title="Serial vs parallel R",
+       x="Nr of iterations",
+       y="Relative speedup"
+       ) +
+  theme(
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)
+       ) +
+  guides(color=guide_legend(title="Type"))
+
+
 ```
 
-As we can see, we get similar results in course VM.
-The best speedup we gained was `r relative[relative$relative.speedup == max(relative$relative.speedup),relative.speedup]`.
+As we can see, serial R example has better speedup, when $n$ was smaller.
+However, when $n$ got bigger, the parallel implementation was faster.
 
 \newpage
 \section*{Used literature}
