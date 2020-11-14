@@ -29,17 +29,31 @@ header-includes:
 
 # Setup
 
-```{r setup,include=T}
-# load necessary package
-library(magrittr)
-library(data.table)
-library(ggplot2)
+```{r setup,include=F,echo=T}
+# Check if necessary packages exists.
+# If not then download them
+check_packages <- function(pkg) {
+ new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+ if (length(new.pkg))
+  install.packages(new.pkg, dependencies  =  TRUE,repos = "https://ftp.acc.umu.se/mirror/CRAN/") 
+ sapply(pkg, library, character.only  =  TRUE)
+}
+
+# The following packages are dependencies for this app.
+packages <- c("magrittr", "data.table", "ggplot2", "parallel","foreach","doParallel","dplyr")
+check_packages(packages)
+
+# # load necessary package
+# library(magrittr)
+# library(data.table)
+# library(ggplot2)
 # library(dplyr)
-# library(knitr)
-library(parallel)
-library(foreach)
-library(doParallel)
-knitr::opts_chunk$set(fig.width = 5, fig.heighta = 3)
+# # library(knitr)
+# library(parallel)
+# library(foreach)
+# library(doParallel)
+
+knitr::opts_chunk$set(fig.width = 6, fig.heighta = 4)
 options(scipen = 1000)
 ```
 
@@ -60,14 +74,13 @@ MCser1 <- function(n){
   EX <- mean(f(i))
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCser1"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCser1"))
 }
-header
-MCser1(n)
+data.table(t(MCser1(n))) %>% setNames(header)
 ```
 
-Let's try a bit more vectorized solution, using the apply function family.
+Let's try a bit more vectorized solution, using the \*apply function.
 
 ```{r}
 MCser2 <- function(n,ncols=1000){
@@ -78,14 +91,13 @@ MCser2 <- function(n,ncols=1000){
     },dt) %>% mean
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCser2"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCser2"))
 }
-header
-MCser2(n)
+data.table(t(MCser2(n))) %>% setNames(header)
 ```
 
-Let's try an apprach using data.table.
+Let's try an approach using data.table.
 
 ```{r}
 MCser3 <- function(n){
@@ -94,11 +106,10 @@ MCser3 <- function(n){
   EX <- dt[,.(EX = mean(f(unif)))] %>% unlist %>% unname
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCser3"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCser3"))
 }
-header
-MCser3(n)
+data.table(t(MCser3(n))) %>% setNames(header)
 ```
 
 Let's try divide-and-conquer approach with data.table.
@@ -110,11 +121,10 @@ MCser4 <- function(n,ncols=1000){
   EX <- dt[,lapply(.SD,f)][,lapply(.SD,mean)][,.(EX = sum(.SD)/ncols)] %>% unlist %>% unname
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCser4"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCser4"))
 }
-header
-MCser4(n)
+data.table(t(MCser4(n))) %>% setNames(header)
 ```
 
 
@@ -134,15 +144,14 @@ MCpar1 <- function(n){
       EX <- mean(f(runif(ni,0,1)))
     },f
   )
-  stopCluster(cl)
+  on.exit(stopCluster(cl))
   EX <- mean(intermean)
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCpar1"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCpar1"))
 }
-header
-MCpar1(n)
+data.table(t(MCpar1(n))) %>% setNames(header)
 ```
 
 Now let's try approach analogical to MCser2.
@@ -158,15 +167,14 @@ MCpar2 <- function(n){
       EX <- mean(f(dt[,i]))
     },f,dt
   )
-  stopCluster(cl)
+  on.exit(stopCluster(cl))
   EX <- mean(intermean)
   end <- Sys.time()
-  error <- EX - analytical %>% abs
+  error <- (EX - analytical) %>% abs
   time <- difftime(end,start)
-  return(list(n,EX,analytical,error,time,"MCpar2"))
+  return(c(n,EX,analytical,error,time,"MCpar2"))
 }
-header
-MCpar2(n)
+data.table(t(MCpar2(n))) %>% setNames(header)
 ```
 
 This approach was not very good. But let's have one more try at analogical solution to MCser2.
@@ -182,15 +190,14 @@ MCpar2_2 <- function(n,ncols=1000){
       EX <- mean(f(dt[,i]))
     },f,dt
   )
-  stopCluster(cl)
+  on.exit(stopCluster(cl))
   EX <- mean(intermean)
   end <- Sys.time()
-  error <- EX - analytical %>% abs
+  error <- (EX - analytical) %>% abs
   time <- difftime(end,start)
-  return(list(n,EX,analytical,error,time,"MCpar2_2"))
+  return(c(n,EX,analytical,error,time,"MCpar2_2"))
 }
-header
-MCpar2_2(n)
+data.table(t(MCpar2_2(n))) %>% setNames(header)
 ```
 
 This solution was bit better, but still worse than the previous examples.\
@@ -203,16 +210,17 @@ MCpar3 <- function(n){
   no_cores <- detectCores()
   # Initiate cluster
   cl<-makeCluster(no_cores)
-  registerDoParallel(cl)
-  EX <- foreach(ni = rep(n/no_cores,no_cores),.combine=mean,.export="f") %dopar% mean(f(runif(ni,0,1)))
-  stopImplicitCluster()
+  # registerDoParallel(cl)
+  EX <- foreach(ni = rep(n/no_cores,no_cores),.combine=mean,.export="f") %dopar% 
+    mean(f(runif(ni,0,1)))
+  on.exit(stopCluster(cl))
+  # stopImplicitCluster()
   end <- Sys.time()
   time <- difftime(end,start)
-  error <- EX - analytical %>% abs
-  return(list(n,EX,analytical,error,time,"MCpar3"))
+  error <- (EX - analytical) %>% abs
+  return(c(n,EX,analytical,error,time,"MCpar3"))
 }
-header
-MCpar3(n)
+data.table(t(MCpar3(n))) %>% setNames(header)
 ```
 
 
@@ -220,14 +228,37 @@ MCpar3(n)
 
 Now, let's visualize the walltimes of implemented solutions.
 
-```{r}
-iterations <- 10**(3:4)
-data <- sapply(iterations,function(n){
-  #c(
-  #       MCser1(n),MCser2(n)#,MCser3(n),MCser4(n),
-  #       #MCpar1(n),MCpar2(n),MCpar2_2(n),MCpar3(n)
-  #) %>% 
-  # data.table(t(MCser1(n)))
-}) %>% data.table
+```{r visualization}
+iterations <- c(2.5,5,7.5,10)*10**(5:7)
+funs <- c(
+  MCser1,MCser2,MCser3,MCser4,
+  MCpar1,MCpar3 #MCpar2,MCpar2_2,
+)
+data <- sapply(funs,function(f,iterations){
+  sapply(iterations,function(n){
+    f(n)
+  })
+},iterations) %>% 
+  matrix(ncol=6,byrow=T) %>%
+  data.table %>%
+  setNames(header) %>%
+  mutate_at(header[-grep(x=header,pattern="type")],as.numeric)
+
+data
+
+ggplot(data=data,aes(x=n,y=walltime,group=type,color=type)) +
+  geom_point() +
+  geom_line() +
+  labs(
+       title="Serial vs parallel implementations",
+       x="Nr of iterations",
+       y="Walltime (sec)"
+       ) +
+  theme(
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)
+       ) +
+  guides(color=guide_legend(title="Function"))
+
 ```
 
