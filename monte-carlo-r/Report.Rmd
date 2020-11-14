@@ -1,0 +1,233 @@
+---
+title: Monte-Carlo examples in R
+subtitle: Serial vs parallel code
+author: Meelis Utt
+date: 
+output: pdf_document
+# output: html_document
+header-includes:
+ - \usepackage[T1]{fontenc}
+ - \usepackage[utf8]{inputenc}
+ - \usepackage[estonian]{babel}
+ - \usepackage{amsmath}
+ - \usepackage{amssymb}
+ - \usepackage{amsthm}
+ - \usepackage{soul}
+ - \usepackage{cancel}
+ - \usepackage{enumitem}
+ - \usepackage{graphicx}
+ - \usepackage{pdfpages}
+ - \usepackage{titling}
+ - \usepackage[nottoc,numbib]{tocbibind}
+ - \usepackage{hyperref}
+---
+
+\def\UrlBreaks{\do\/\do-}
+\hypersetup{ colorlinks=true, linkcolor=blue, filecolor=magenta,      urlcolor=cyan, citecolor=red}
+\newcommand{\refr}[1]{ (\ref{#1}) }
+\newcommand{\comment}[2]{ \overset{\makebox[20pt]{\mbox{\normalfont\tiny #1}}}{#2} }
+
+# Setup
+
+```{r setup,include=T}
+# load necessary package
+library(magrittr)
+library(data.table)
+library(ggplot2)
+# library(dplyr)
+# library(knitr)
+library(parallel)
+library(foreach)
+library(doParallel)
+knitr::opts_chunk$set(fig.width = 5, fig.heighta = 3)
+options(scipen = 1000)
+```
+
+Let's source the setup (function, analytical solution, number of iterations).
+
+```{r}
+source("Setup.R",echo = T)
+```
+
+# Serial implementations
+
+Let's start with a simple implementation of Monte-Carlo method.
+
+```{r}
+MCser1 <- function(n){
+  start <- Sys.time()
+  i <- runif(n,0,1)
+  EX <- mean(f(i))
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCser1"))
+}
+header
+MCser1(n)
+```
+
+Let's try a bit more vectorized solution, using the apply function family.
+
+```{r}
+MCser2 <- function(n,ncols=1000){
+  start <- Sys.time()
+  dt <- matrix(runif(n,0,1),ncol = ncols)
+  EX <- sapply(1:ncols,function(i,dt){
+      EX <- dt[,i] %>% f %>% mean
+    },dt) %>% mean
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCser2"))
+}
+header
+MCser2(n)
+```
+
+Let's try an apprach using data.table.
+
+```{r}
+MCser3 <- function(n){
+  start <- Sys.time()
+  dt <- data.table(unif = runif(n,0,1))
+  EX <- dt[,.(EX = mean(f(unif)))] %>% unlist %>% unname
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCser3"))
+}
+header
+MCser3(n)
+```
+
+Let's try divide-and-conquer approach with data.table.
+
+```{r}
+MCser4 <- function(n,ncols=1000){
+  start <- Sys.time()
+  dt <- matrix(runif(n,0,1),ncol=ncols) %>% data.table
+  EX <- dt[,lapply(.SD,f)][,lapply(.SD,mean)][,.(EX = sum(.SD)/ncols)] %>% unlist %>% unname
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCser4"))
+}
+header
+MCser4(n)
+```
+
+
+# Parallel implementations
+
+Let's try different parallel implementations.
+First let's start with package \textit{parallel}.
+
+```{r}
+MCpar1 <- function(n){
+  start <- Sys.time()
+  # Calculate the number of cores
+  no_cores <- detectCores()
+  # Initiate cluster
+  cl <- makeCluster(no_cores)
+  intermean <- parSapply(cl, rep(n/no_cores,no_cores),function(ni,f){
+      EX <- mean(f(runif(ni,0,1)))
+    },f
+  )
+  stopCluster(cl)
+  EX <- mean(intermean)
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCpar1"))
+}
+header
+MCpar1(n)
+```
+
+Now let's try approach analogical to MCser2.
+
+```{r}
+MCpar2 <- function(n){
+  start <- Sys.time()
+  # Calculate the number of cores
+  no_cores <- detectCores()
+  cl <- makeCluster(no_cores)
+  dt <- matrix(runif(n,0,1),ncol = no_cores)
+  intermean <- parSapply(cl, 1:no_cores,function(i,f,dt){
+      EX <- mean(f(dt[,i]))
+    },f,dt
+  )
+  stopCluster(cl)
+  EX <- mean(intermean)
+  end <- Sys.time()
+  error <- EX - analytical %>% abs
+  time <- difftime(end,start)
+  return(list(n,EX,analytical,error,time,"MCpar2"))
+}
+header
+MCpar2(n)
+```
+
+This approach was not very good. But let's have one more try at analogical solution to MCser2.
+
+```{r}
+MCpar2_2 <- function(n,ncols=1000){
+  start <- Sys.time()
+  # Calculate the number of cores
+  no_cores <- detectCores()
+  cl <- makeCluster(no_cores)
+  dt <- matrix(runif(n,0,1),ncol = ncols)
+  intermean <- parSapply(cl, 1:ncols,function(i,f,dt){
+      EX <- mean(f(dt[,i]))
+    },f,dt
+  )
+  stopCluster(cl)
+  EX <- mean(intermean)
+  end <- Sys.time()
+  error <- EX - analytical %>% abs
+  time <- difftime(end,start)
+  return(list(n,EX,analytical,error,time,"MCpar2_2"))
+}
+header
+MCpar2_2(n)
+```
+
+This solution was bit better, but still worse than the previous examples.\
+Let's try the package \textit{foreach} now.
+
+```{r}
+MCpar3 <- function(n){
+  start <- Sys.time()
+  # Calculate the number of cores
+  no_cores <- detectCores()
+  # Initiate cluster
+  cl<-makeCluster(no_cores)
+  registerDoParallel(cl)
+  EX <- foreach(ni = rep(n/no_cores,no_cores),.combine=mean,.export="f") %dopar% mean(f(runif(ni,0,1)))
+  stopImplicitCluster()
+  end <- Sys.time()
+  time <- difftime(end,start)
+  error <- EX - analytical %>% abs
+  return(list(n,EX,analytical,error,time,"MCpar3"))
+}
+header
+MCpar3(n)
+```
+
+
+# Benchmarking
+
+Now, let's visualize the walltimes of implemented solutions.
+
+```{r}
+iterations <- 10**(3:4)
+data <- sapply(iterations,function(n){
+  #c(
+  #       MCser1(n),MCser2(n)#,MCser3(n),MCser4(n),
+  #       #MCpar1(n),MCpar2(n),MCpar2_2(n),MCpar3(n)
+  #) %>% 
+  # data.table(t(MCser1(n)))
+}) %>% data.table
+```
+

@@ -3,6 +3,8 @@ options(scipen=1000)
 
 # define number of iterations
 n <- 10000000
+# header
+header <- c("n","computational result","analytical result","error","time")
 
 # Define example function.
 f <- function(x){
