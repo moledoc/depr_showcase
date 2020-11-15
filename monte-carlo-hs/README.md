@@ -3,7 +3,7 @@
 
 Serial and parallel example of Monte-Carlo method in Haskell.
 
-## Synopsis
+## Purpose
 
 In this project, the main idea was to explore parallelism in Haskell, using Monte-Carlo mehtod as an example.
 The first idea was to use package _mpi-hs_. Due to some unresolved dependencies, I needed to change my direction.
