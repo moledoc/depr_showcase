@@ -59,7 +59,7 @@ options(scipen = 1000)
 
 Let's source the setup (function, analytical solution, number of iterations).
 
-```{r}
+```{r source}
 source("Setup.R",echo = T)
 ```
 
@@ -67,7 +67,7 @@ source("Setup.R",echo = T)
 
 Let's start with a simple implementation of Monte-Carlo method.
 
-```{r}
+```{r MCser1}
 MCser1 <- function(n){
   start <- Sys.time()
   i <- runif(n,0,1)
@@ -82,7 +82,7 @@ data.table(t(MCser1(n))) %>% setNames(header)
 
 Let's try a bit more vectorized solution, using the \*apply function.
 
-```{r}
+```{r MCser2}
 MCser2 <- function(n,ncols=1000){
   start <- Sys.time()
   dt <- matrix(runif(n,0,1),ncol = ncols)
@@ -99,7 +99,7 @@ data.table(t(MCser2(n))) %>% setNames(header)
 
 Let's try an approach using data.table.
 
-```{r}
+```{r MCser3}
 MCser3 <- function(n){
   start <- Sys.time()
   dt <- data.table(unif = runif(n,0,1))
@@ -114,7 +114,7 @@ data.table(t(MCser3(n))) %>% setNames(header)
 
 Let's try divide-and-conquer approach with data.table.
 
-```{r}
+```{r MCser4}
 MCser4 <- function(n,ncols=1000){
   start <- Sys.time()
   dt <- matrix(runif(n,0,1),ncol=ncols) %>% data.table
@@ -133,7 +133,7 @@ data.table(t(MCser4(n))) %>% setNames(header)
 Let's try different parallel implementations.
 First let's start with package \textit{parallel}.
 
-```{r}
+```{r MCpar1}
 MCpar1 <- function(n){
   start <- Sys.time()
   # Calculate the number of cores
@@ -156,7 +156,7 @@ data.table(t(MCpar1(n))) %>% setNames(header)
 
 Now let's try approach analogical to MCser2.
 
-```{r}
+```{r MCpar2}
 MCpar2 <- function(n){
   start <- Sys.time()
   # Calculate the number of cores
@@ -179,7 +179,7 @@ data.table(t(MCpar2(n))) %>% setNames(header)
 
 This approach was not very good. But let's have one more try at analogical solution to MCser2.
 
-```{r}
+```{r MCpar2_2}
 MCpar2_2 <- function(n,ncols=1000){
   start <- Sys.time()
   # Calculate the number of cores
@@ -203,7 +203,7 @@ data.table(t(MCpar2_2(n))) %>% setNames(header)
 This solution was bit better, but still worse than the previous examples.\
 Let's try the package \textit{foreach} now.
 
-```{r}
+```{r MCpar3}
 MCpar3 <- function(n){
   start <- Sys.time()
   # Calculate the number of cores
@@ -229,7 +229,7 @@ data.table(t(MCpar3(n))) %>% setNames(header)
 Now, let's visualize the walltimes of implemented solutions.
 
 ```{r visualization}
-iterations <- c(2.5,5,7.5,10)*10**(5:7)
+iterations <- c(1,2.5,5,7.5)*10**(7)#(5:7)
 funs <- c(
   MCser1,MCser2,MCser3,MCser4,
   MCpar1,MCpar3 #MCpar2,MCpar2_2,
