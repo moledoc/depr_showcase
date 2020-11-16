@@ -35,4 +35,4 @@ In the future I'm planning on adding implementations of expenses project in diff
 #### Other
 
 	* Simple csv parser in haskell - When compiled, takes a filepath and parses the contents to a matrix, where each matrix row corresponds to row in a file. Each comma separated item is it's own item inside the row list.
-
+  * FizzBuzz - Implementations of fizzbuzz in different languages. Tried to make them bit more efficient, than the most simple solution. However, I haven't benchmarked them.
