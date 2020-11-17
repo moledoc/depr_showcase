@@ -1,0 +1,69 @@
+---
+title: Serial vs parallel
+subtitle: python
+author: Meelis Utt
+date: 
+# output: pdf_document
+output: html_document
+---
+
+```{r,include=F}
+# load necessary package for running and knitting python chuncks
+library(reticulate)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 3.75)
+options(scipen=1000)
+```
+
+```{python setup}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpi4py import MPI
+import time
+
+def f(x):
+    return(x**2 + x**4+ np.sin(x) + np.cos(x) +x**25)
+
+analytical = 613/390 + np.sin(1) - np.cos(1)
+```
+
+```{python serial}
+def MC(n):
+    pyunif = np.random.uniform(0,1,n)
+    EX = np.mean(f(pyunif))
+    error = np.abs(EX-analytical)
+    return(EX,error)
+```
+
+```{python results}
+N = np.arange(1000000,10000001,2500000)
+N = [10,100,1000]
+EX = []
+error = []
+type = []
+walltime = []
+for n in N:
+  start = time.time()
+  ex,err = MC(n)
+  end = time.time()
+  EX.append(ex);error.append(err),type.append("MCser");walltime.append(end-start)
+
+  # start = time.time()
+  # ex,err = MCpar(n)
+  # end = time.time()
+  # EX.append(ex);error.append(err),type.append("MCser");walltime.append(end-start)
+  
+```
+
+```{python vizualisation}
+dict = {"n": np.repeat(N,1),"EX": EX,"error":error,"type":type,"walltime":walltime}
+print(dict)
+df = pd.DataFrame(dict)
+print(df)
+df.plot(kind='line',x='n',y='walltime',style='.-',rot=0)
+plt.show()
+```
+
+
+
+
