@@ -3,8 +3,8 @@ title: Serial vs parallel
 subtitle: python
 author: Meelis Utt
 date: 
-# output: pdf_document
-output: html_document
+output: pdf_document
+# output: html_document
 ---
 
 ```{r,include=F}
@@ -18,7 +18,6 @@ options(scipen=1000)
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpi4py import MPI
 import time
 
 def f(x):
@@ -36,32 +35,55 @@ def MC(n):
 ```
 
 ```{python results}
-N = np.arange(1000000,10000001,2500000)
-N = [10,100,1000]
+N = 1000000 * np.array([1,2.5,5,7.5,10], dtype=int)
 EX = []
 error = []
 type = []
 walltime = []
 for n in N:
   start = time.time()
-  ex,err = MC(n)
+  ex,err = MC(int(n))
   end = time.time()
-  EX.append(ex);error.append(err),type.append("MCser");walltime.append(end-start)
-
-  # start = time.time()
-  # ex,err = MCpar(n)
-  # end = time.time()
-  # EX.append(ex);error.append(err),type.append("MCser");walltime.append(end-start)
-  
+  EX.append(ex);error.append(err);type.append("MCser");walltime.append(end-start)
 ```
 
+```{sh}
+# MCpar results
+rm -f resultsPar.csv
+for p in 1 2 4 5 10 25 50 100
+do
+  for n in 1000000 2500000 5000000 7500000 10000000
+  do
+    mpirun -n $p --hostfile hostfile python MCpar.py $n >> resultsPar.csv
+  done
+done
+```
+
+
 ```{python vizualisation}
-dict = {"n": np.repeat(N,1),"EX": EX,"error":error,"type":type,"walltime":walltime}
-print(dict)
-df = pd.DataFrame(dict)
-print(df)
-df.plot(kind='line',x='n',y='walltime',style='.-',rot=0)
+# dict = {"n": N,"EX": EX,"error":error,"type":type,"walltime":walltime}
+dict = {"n": N,"EX": EX,"error":error,"type":type,"walltime":walltime}
+
+dfSer = pd.DataFrame(dict)
+print(dfSer)
+
+dfPar = pd.read_csv("resultsPar.csv",header=0,names=["n","EX","error","type","walltime","processes"])
+print(dfPar)
+
+ax = plt.gca()
+dfSer.plot(kind='line',x='n',y='walltime',style='.-',rot=0,label='Serial')
+
+dfPar.groupby('processes').plot(kind='line',x='n',y='walltime',
+  style='.-',rot=0,ax=plt.gca(),label="Parallel "+str('processes'))
+
+# plt.legend(bbox_to_anchor=(1.25,0.75), bbox_transform=ax.transData)
+plt.legend(['Serial','Parallel P=1','Parallel P=2','Parallel P=4',
+  'Parallel P=5','Parallel P=10','Parallel P=25',
+  'Parallel P=50','Parallel P=100'],loc='upper left')
 plt.show()
+
+# dfPar.join(dfSer,on="n",lsuffix=".par",rsuffix=".ser")
+# TODO: plot relative speedups
 ```
 
 
