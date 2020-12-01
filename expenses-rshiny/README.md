@@ -84,4 +84,5 @@ In this repository, there is test data given.
 
 ## Author
 
-Written by Meelis Utt
+Written by
+Meelis Utt

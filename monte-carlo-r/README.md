@@ -1,4 +1,5 @@
-## Name
+
+## Synopsis
 
 Serial and parallel code in R, using Monte-Carlo method as an example.
 

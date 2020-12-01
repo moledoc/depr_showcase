@@ -1,5 +1,5 @@
 
-## Name
+## Synopsis
 
 Serial and parallel code in python, using Monte-Carlo method as an example.
 
