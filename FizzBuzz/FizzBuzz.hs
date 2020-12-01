@@ -1,5 +1,6 @@
 module FizzBuzz where
 
+-- Version1
 fizzbuzz :: Int -> String
 fizzbuzz x
  | (mod) x 3 == 0 && (mod) x 5 == 0 = "FizzBuzz"
@@ -9,7 +10,7 @@ fizzbuzz x
 
 
 
-
+-- Version2
 fizz :: Int -> String
 fizz x
  | (mod) x 3 == 0 = "Fizz"
@@ -29,9 +30,13 @@ fb x n str
  | (mod) x n == 0 = str
  | otherwise      = ""
 
+-- Main
 main :: IO ()
 main = do
+ -- Version1
  -- _ <- mapM (\x -> putStrLn $ fizzbuzz x) [1..100]
- -- _ <- mapM (\x -> putStrLn $ fizzbuzzV2 x (fizz x) (buzz x)) [1..100]
- _ <- mapM (\x -> putStrLn $ fizzbuzzV2 x (fb x 3 "Fizz") (fb x 5 "Buzz")) [1..100]
+ -- Version2
+ _ <- mapM (\x -> putStrLn $ fizzbuzzV2 x (fizz x) (buzz x)) [1..100]
+ -- Version3
+ -- _ <- mapM (\x -> putStrLn $ fizzbuzzV2 x (fb x 3 "Fizz") (fb x 5 "Buzz")) [1..100]
  putStrLn ""
