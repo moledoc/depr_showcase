@@ -37,3 +37,4 @@ In the future I'm planning on adding implementations of expenses project in diff
 
 * Simple csv parser in haskell - When compiled, takes a filepath and parses the contents to a matrix, where each matrix row corresponds to row in a file. Each comma separated item is it's own item inside the row list.
 * FizzBuzz - Implementations of fizzbuzz in different languages. Tried to make them bit more efficient, than the most simple solution. However, I haven't benchmarked them.
+* Airflow-example - This is just to display, that I am familiar with airflow. This example was one of my homeworks in Data-Engineering course. In this project, I am responsible of the dag, that is located in dags/ directory. All the other setup (airflow and docker) was not done by me in this case.
