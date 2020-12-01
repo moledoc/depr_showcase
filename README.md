@@ -31,6 +31,7 @@ In the future I'm planning on adding implementations of expenses project in diff
 
 * Haskell - This project was made to show the parallel aspects of Haskell. Also, it was submitted as a homework in parallel computation course. The Monte-Carlo method was used as an example, since MC method is embarrasingly parallel. In this project it was not achieved. Furthermore, the Haskell implementation can be improved upon.
 * R - This project is to test and explore serial and parallel computations in R. Monte-Carlo method is used, since it is easily parallelized.
+* Python - T
 
 #### Other
 

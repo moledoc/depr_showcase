@@ -1,6 +1,6 @@
 ## Name
 
-Serial and parallel code in R, using Monte-Carlo mehtod as an example.
+Serial and parallel code in R, using Monte-Carlo method as an example.
 
 ## Purpose
 

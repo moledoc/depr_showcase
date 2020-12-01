@@ -14,6 +14,8 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 3.75)
 options(scipen=1000)
 ```
 
+Let's import necessary python packages and define example function $f$ and it's analytical solutions.
+
 ```{python setup}
 import numpy as np
 import pandas as pd
@@ -26,6 +28,8 @@ def f(x):
 analytical = 613/390 + np.sin(1) - np.cos(1)
 ```
 
+Let's define simple serial implementation of Monte-Carlo method.
+
 ```{python serial}
 def MC(n):
     pyunif = np.random.uniform(0,1,n)
@@ -34,8 +38,10 @@ def MC(n):
     return(EX,error)
 ```
 
+Let's run the serial implementation and save results.
+
 ```{python results}
-N = 1000000 * np.array([1,2.5,5,7.5,10], dtype=int)
+N = np.array(1000000 * np.array([1,2.5,5,7.5,10], dtype=float),dtype=int)
 EX = []
 error = []
 type = []
@@ -46,6 +52,14 @@ for n in N:
   end = time.time()
   EX.append(ex);error.append(err);type.append("MCser");walltime.append(end-start)
 ```
+
+Now let's define parallel implementation of Monte-Carlo method using Message Passing Interface (MPI).
+
+```{sh}
+cat MCpar.py
+```
+
+Let's run the parallel code, with the same $n$, but with different number of processes $p$.
 
 ```{sh}
 # MCpar results
@@ -59,6 +73,8 @@ do
 done
 ```
 
+Let's vizualise the walltimes and relative speedups.\
+Walltimes:
 
 ```{python vizualisation}
 # dict = {"n": N,"EX": EX,"error":error,"type":type,"walltime":walltime}
@@ -67,7 +83,8 @@ dict = {"n": N,"EX": EX,"error":error,"type":type,"walltime":walltime}
 dfSer = pd.DataFrame(dict)
 print(dfSer)
 
-dfPar = pd.read_csv("resultsPar.csv",header=0,names=["n","EX","error","type","walltime","processes"])
+dfPar = pd.read_csv("resultsPar.csv",header=0,
+  names=["n","EX","error","type","walltime","processes"])
 print(dfPar)
 
 ax = plt.gca()
@@ -80,12 +97,28 @@ dfPar.groupby('processes').plot(kind='line',x='n',y='walltime',
 plt.legend(['Serial','Parallel P=1','Parallel P=2','Parallel P=4',
   'Parallel P=5','Parallel P=10','Parallel P=25',
   'Parallel P=50','Parallel P=100'],loc='upper left')
-plt.show()
 
-# dfPar.join(dfSer,on="n",lsuffix=".par",rsuffix=".ser")
-# TODO: plot relative speedups
+plt.xlabel('number of iterations n')
+plt.ylabel('Walltime (sec)')
+plt.title('Serial vs parallel (MPI) MC example')
+plt.show()
 ```
 
+Relative speedups:
 
+```{python vizualisation2}
+dfRel = dfPar.merge(dfSer,left_on="n",right_on="n",suffixes=(".par",".ser"))
+dfRel["relative.speedup"] = dfRel["walltime.ser"]/dfRel["walltime.par"]
+dfRel.groupby('processes').plot(kind='line',x='n',y='relative.speedup',
+  style='.-',rot=0,ax=plt.gca(),label="Relative speedup "+str('processes'))
 
+plt.legend(['Parallel P=1','Parallel P=2','Parallel P=4',
+  'Parallel P=5','Parallel P=10','Parallel P=25',
+  'Parallel P=50','Parallel P=100'],loc='upper left')
+
+plt.xlabel('number of iterations n')
+plt.ylabel('Relative speedup')
+plt.title('Serial vs parallel (MPI) MC example')
+plt.show()
+```
 
