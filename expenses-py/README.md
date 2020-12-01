@@ -10,4 +10,4 @@ This is a simple python script, that summaries expenses from a text file. Summar
 
 # Notes
 
-	* The path to data.csv is hardcoded. User needs to change the path according to user's own system.
+* The path to data.csv is hardcoded. User needs to change the path according to user's own system.
