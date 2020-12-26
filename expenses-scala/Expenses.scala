@@ -19,7 +19,7 @@ object Expenses{
         var description = desc
 
         override def toString(): String = {
-            date ++ "," ++ expense.toString ++ "," ++ section ++ "," ++ description
+            date ++ "," ++ expense.toString ++ "," ++ section.toUpperCase ++ "," ++ description.toUpperCase
         }
     }
 
@@ -83,7 +83,7 @@ object Expenses{
         var expensesMap = Map[Int,Expense]()
 
         // read in file and make expenses
-        val bufferedSource = Source.fromFile("data.csv")
+        val bufferedSource = Source.fromFile("data.csv") //TODO: data.csv -> datafile
         var i = 1
         for (line <- bufferedSource.getLines) {
             if (!line.toUpperCase.contains("EXPENSE")){
