@@ -16,6 +16,7 @@ object Expenses extends JFXApp {
   val buttonWidth = 125
   var header = ""
 
+  // expense object
   class Expense(d: String, e: Double, sec: String, desc: String) {
     var date = d
     var expense = e
@@ -27,30 +28,27 @@ object Expenses extends JFXApp {
     }
   }
 
+  // make expense
   def makeExpense(line: String): Expense = {
     val elements = line.split(",")
     new Expense(elements(0), elements(1).toDouble, elements(2), elements(3))
   }
 
+  // calculate sum of given expenses list
   def expenseSum(exp: List[Expense]): Double = {
     exp.foldLeft(0.0)((acc, x) => acc + x.expense)
   }
 
+  // create a report output
   def makeReport(exp: List[Expense], start: String, end: String): String = {
-    //    // get user input for start and end date
-    //    val start = scala.io.StdIn.readLine("Start date: ")
-    //    val end = scala.io.StdIn.readLine("End date: ")
     val expensesList = exp.filter(x => x.date >= start && x.date < end)
     // calculate report
     val output = expensesList.groupBy(_.section).foldRight(start ++ " -- " ++ end ++ "\n" ++ "TOTAL: " ++ expenseSum(expensesList).toString)((x, acc) => acc ++ "\n -- " ++ x._1 ++ ": " ++ expenseSum(x._2).toString)
     output
   }
 
+  // add new expense to datafile
   def addExpense(exp: Map[Int, Expense], date: String, expense: Double, section: String, description: String): Map[Int, Expense] = {
-    //    val date = scala.io.StdIn.readLine("Date: ")
-    //    val expense = scala.io.StdIn.readLine("Amount: ").toDouble
-    //    val section = scala.io.StdIn.readLine("Type: ")
-    //    val description = scala.io.StdIn.readLine("Description: ")
     val newExp = new Expense(date, expense, section, description)
 
     val fw = new FileWriter(datafile, true)
@@ -64,10 +62,9 @@ object Expenses extends JFXApp {
     addNew
   }
 
+  // remove expense from datafile
   def rmExpense(exp: Map[Int, Expense], rmIdx: Int): Map[Int, Expense] = {
     var rmExp = ListMap(exp.toSeq.sortBy(_._1): _*)
-    // TODO: printida
-    //    val rmIdx = scala.io.StdIn.readLine("Select the index of expense that you want to delete: ").toInt
     rmExp -= rmIdx
 
     val pw = new PrintWriter(datafile)
@@ -82,18 +79,15 @@ object Expenses extends JFXApp {
     rmExp
   }
 
+  // return displayable list of expenses
   def printExpenses(exp: Map[Int, Expense]): String = {
     val outExp = ListMap(exp.toSeq.sortBy(_._1): _*)
     val output = outExp.foldRight(header)((x, acc) => acc ++ x._1.toString ++ ": " ++ x._2.toString ++ "\n")
     output
   }
 
-  //  def printExpenses(exp: Map[Int,Expense]): Map[Int,Expense] = {
-  //    var outExp = ListMap(exp.toSeq.sortBy(_._1):_*)
-  //    outExp.foreach(x=>println(x._1.toString++": "++x._2.toString))
-  //    outExp
-  //  }
-
+  // read expenses from datafile.
+  // if file doesn't exist, alert user and end program.
   def readExpense(): Map[Int, Expense] = {
     var expensesMap = Map[Int, Expense]()
     if(!Files.exists(Paths.get(datafile))){
@@ -119,32 +113,7 @@ object Expenses extends JFXApp {
     expensesMap
   }
 
-  //    def main(args: Array[String]): Unit = {
-  //        var expensesList = new ListBuffer[Expense]()
-  //        var expensesMap = Map[Int,Expense]()
-  //
-  //        // read in file and make expenses
-  //        val bufferedSource = Source.fromFile("data.csv") //
-  //        var i = 1
-  //        for (line <- bufferedSource.getLines) {
-  //            if (!line.toUpperCase.contains("EXPENSE")){
-  //                expensesMap += (i -> makeExpense(line.toUpperCase))
-  //                i+=1
-  //            }
-  //        }
-  //        bufferedSource.close
-  //        // println(expensesMap.values)
-  //
-  //        // // // Report
-  //        // makeReport(expensesMap.values.toList)
-  //
-  //        // // Add expense
-  //        // addExpense(expensesMap)
-  //
-  //        // // remove expense
-  //        //rmExpense(expensesMap)
-  //
-  //    }
+  // GUI application
   stage = new JFXApp.PrimaryStage {
     title = "expenses"
     width = 500
@@ -190,8 +159,6 @@ object Expenses extends JFXApp {
           }
           startDate.value = null
           endDate.value = null
-//          startDate.promptText = "Start date"
-//          endDate.promptText = "End date"
         }
       }
 
@@ -246,15 +213,10 @@ object Expenses extends JFXApp {
             }.showAndWait()
           }
           addOutput.text = printExpenses(expensesMap)
-//          addTab.content = addOutput
           date.value = null
           expense.text = null
           section.text = null
           description.text = null
-//          date.promptText = "Date"
-//          expense.promptText = "Amount"
-//          section.promptText = "Type"
-//          description.promptText = "Description"
         }
       }
 
@@ -290,8 +252,6 @@ object Expenses extends JFXApp {
       val rm: Node = new Button {
         text = "Remove"
         onAction = _ => {
-//          rmIdx.text.value.split(",").foreach(x=>expensesMap = rmExpense(expensesMap, x.toInt))
-//          for(x <- rmIdx.text.value.split(",|, |;|.| ")){
           try{
             val idList = rmIdx.text.value.split(", |,|; |;| ")
             val checkedList = idList.map(_.toInt)
@@ -306,7 +266,6 @@ object Expenses extends JFXApp {
           }
           rmOutput.text = printExpenses(expensesMap)
           rmIdx.text = null
-//          rmIdx.promptText = "ID of expense"
         }
       }
 
