@@ -1,23 +1,16 @@
 import scala.io.Source
-import java.io._
 import scala.collection.immutable.ListMap
 import scalafx.application.JFXApp
 import scalafx.scene.{Node, Scene}
-import scalafx.scene.paint.Color
-import scalafx.Includes._
-import scalafx.beans.property.ReadOnlyDoubleProperty
-import scalafx.geometry.Insets
-import scalafx.scene.AccessibleRole.ScrollPane
-import scalafx.scene.control.{Button, DateCell, DatePicker, MenuButton, ScrollPane, Slider, Tab, TabPane, TextArea, TextField}
-import scalafx.scene.layout.{BorderPane, HBox, TilePane, VBox}
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control.{Alert, Button, DatePicker, Tab, TabPane, TextArea, TextField}
+import scalafx.scene.layout.{BorderPane, VBox}
 
+import java.io._
 import java.util.Calendar
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 
 object Expenses extends JFXApp {
-  val datafile = "dat.csv"
+  val datafile = "data.csv"
   val buttonWidth = 125
   var header = ""
 
@@ -103,7 +96,7 @@ object Expenses extends JFXApp {
     var expensesMap = Map[Int, Expense]()
 
     // read in file and make expenses
-    val bufferedSource = Source.fromFile("data.csv") //TODO: data.csv -> datafile
+    val bufferedSource = Source.fromFile(datafile)
     var i = 1
     for (line <- bufferedSource.getLines) {
       if (!line.toUpperCase.contains("EXPENSE")) {
@@ -122,7 +115,7 @@ object Expenses extends JFXApp {
   //        var expensesMap = Map[Int,Expense]()
   //
   //        // read in file and make expenses
-  //        val bufferedSource = Source.fromFile("data.csv") //TODO: data.csv -> datafile
+  //        val bufferedSource = Source.fromFile("data.csv") //
   //        var i = 1
   //        for (line <- bufferedSource.getLines) {
   //            if (!line.toUpperCase.contains("EXPENSE")){
@@ -178,7 +171,14 @@ object Expenses extends JFXApp {
       val report = new Button {
         text = "Report"
         onAction = _ => {
-          reportOutput.text = makeReport(expensesMap.values.toList, startDate.value.value.toString, endDate.value.value.toString)
+          try{
+            reportOutput.text = makeReport(expensesMap.values.toList, startDate.value.value.toString, endDate.value.value.toString)
+          } catch {
+            case e: NullPointerException => new Alert(AlertType.Information) {
+              title = "Incorrect input"
+              headerText = "Inputs can't be empty"
+            }.showAndWait()
+          }
           startDate.value = null
           endDate.value = null
 //          startDate.promptText = "Start date"
@@ -224,7 +224,18 @@ object Expenses extends JFXApp {
       val add: Node = new Button {
         text = "Add"
         onAction = _ => {
-          expensesMap = addExpense(expensesMap, date.value.value.toString, expense.text.value.toDouble, section.text.value, description.text.value)
+          try{
+            expensesMap = addExpense(expensesMap, date.value.value.toString, expense.text.value.toDouble, section.text.value, description.text.value)
+          } catch{
+            case e: NumberFormatException => new Alert(AlertType.Information) {
+              title = "Incorrect input"
+              headerText = "Amount needs to be a number!"
+            }.showAndWait()
+            case e:NullPointerException => new Alert(AlertType.Information) {
+              title = "Incorrect input"
+              headerText = "Inputs can't be empty"
+            }.showAndWait()
+          }
           addOutput.text = printExpenses(expensesMap)
 //          addTab.content = addOutput
           date.value = null
@@ -271,8 +282,18 @@ object Expenses extends JFXApp {
         text = "Remove"
         onAction = _ => {
 //          rmIdx.text.value.split(",").foreach(x=>expensesMap = rmExpense(expensesMap, x.toInt))
-          for(x <- rmIdx.text.value.split(",")){
-            expensesMap = rmExpense(expensesMap, x.toInt)
+//          for(x <- rmIdx.text.value.split(",|, |;|.| ")){
+          try{
+            val idList = rmIdx.text.value.split(", |,|; |;| ")
+            val checkedList = idList.map(_.toInt)
+            for(x <- checkedList) {
+              expensesMap = rmExpense(expensesMap, x)
+            }
+          } catch{
+            case e: NumberFormatException => new Alert(AlertType.Information) {
+              title = "Incorrect input"
+              headerText = "ID(s) needs to be a number or comma (,) separated list!"
+            }.showAndWait()
           }
           rmOutput.text = printExpenses(expensesMap)
           rmIdx.text = null
