@@ -37,11 +37,11 @@ There are three tabs in the program: Report, Add and Remove.
 
 * In 'Report' tab, user can select a period and when button 'Report' is pressed, a report of expenses for selected period is shown. At startup, running month expenses are reported.
 
-    * ![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/report.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/report.png)
 
 * In 'Add' tab, user can add a new expense by filling all text boxes and pressing the button 'Add'. The button 'Refresh' refreshes the view of expenses. 
 
-    * ![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/add.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/add.png)
 
 * In 'Remove' tab, user can remove expense(s) by filling the text box with expenses ID\'s and pressing the button 'Remove'. Valid ID\'s are following:
 
@@ -52,7 +52,7 @@ There are three tabs in the program: Report, Add and Remove.
 
 The button 'Refresh' refreshes the view of expenses. 
 
-    * ![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/remove.png)
+![Screenshot](https://github.com/moledoc/showcase/blob/master/expenses-scala/README_images/remove.png)
 
 
 Data is read from file 'data.csv', that needs to exist in the root directory of the scala project. If it doesn't exist, the program will not run.
