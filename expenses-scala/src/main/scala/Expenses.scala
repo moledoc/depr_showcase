@@ -7,7 +7,9 @@ import scalafx.scene.control.{Alert, Button, DatePicker, Tab, TabPane, TextArea,
 import scalafx.scene.layout.{BorderPane, VBox}
 
 import java.io._
+import java.nio.file.{Files, Paths}
 import java.util.Calendar
+import scala.sys.exit
 
 object Expenses extends JFXApp {
   val datafile = "data.csv"
@@ -94,8 +96,14 @@ object Expenses extends JFXApp {
 
   def readExpense(): Map[Int, Expense] = {
     var expensesMap = Map[Int, Expense]()
-
-    // read in file and make expenses
+    if(!Files.exists(Paths.get(datafile))){
+      new Alert(AlertType.Error) {
+        title = "file not found"
+        headerText = "Data file '"+datafile+"' doesn't exist, add it to projects root directory"
+      }.showAndWait()
+      exit(0)
+    }
+      // read in file and make expenses
     val bufferedSource = Source.fromFile(datafile)
     var i = 1
     for (line <- bufferedSource.getLines) {
@@ -103,10 +111,11 @@ object Expenses extends JFXApp {
         expensesMap += (i -> makeExpense(line.toUpperCase))
         i += 1
       } else {
-        header = line.toUpperCase++"\n"
+        header = line.toUpperCase ++ "\n"
       }
     }
     bufferedSource.close
+
     expensesMap
   }
 
@@ -174,7 +183,7 @@ object Expenses extends JFXApp {
           try{
             reportOutput.text = makeReport(expensesMap.values.toList, startDate.value.value.toString, endDate.value.value.toString)
           } catch {
-            case e: NullPointerException => new Alert(AlertType.Information) {
+            case e: NullPointerException => new Alert(AlertType.Error) {
               title = "Incorrect input"
               headerText = "Inputs can't be empty"
             }.showAndWait()
@@ -227,11 +236,11 @@ object Expenses extends JFXApp {
           try{
             expensesMap = addExpense(expensesMap, date.value.value.toString, expense.text.value.toDouble, section.text.value, description.text.value)
           } catch{
-            case e: NumberFormatException => new Alert(AlertType.Information) {
+            case e: NumberFormatException => new Alert(AlertType.Error) {
               title = "Incorrect input"
               headerText = "Amount needs to be a number!"
             }.showAndWait()
-            case e:NullPointerException => new Alert(AlertType.Information) {
+            case e:NullPointerException => new Alert(AlertType.Error) {
               title = "Incorrect input"
               headerText = "Inputs can't be empty"
             }.showAndWait()
@@ -290,7 +299,7 @@ object Expenses extends JFXApp {
               expensesMap = rmExpense(expensesMap, x)
             }
           } catch{
-            case e: NumberFormatException => new Alert(AlertType.Information) {
+            case e: NumberFormatException => new Alert(AlertType.Error) {
               title = "Incorrect input"
               headerText = "ID(s) needs to be a number or comma (,) separated list!"
             }.showAndWait()
