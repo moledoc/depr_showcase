@@ -1,0 +1,9 @@
+level1|level2|value
+dct|tst1|1
+single_int||1
+lst_int||1
+lst_int||2
+lst_int||3
+single_str||word
+lst_str||tst1
+lst_str||tst2

@@ -1,0 +1,7 @@
+{"single_int1":1,"lst_int1":[1,2,3],"single_str1":"word","lst_str1":["tst1","tst2"],"dct1":{"tst1":1}}
+{"single_int2":3,"lst_int2":[1,2,3],"single_str2":"word","lst_str2":["tst2","tst2"],"dct2":{"tst2":1}}
+{"single_int3":4,"lst_int3":[1,2,3],"single_str3":"word","lst_str3":["tst3","tst2"],"dct3":{"tst3":1}}
+{"single_int4":5,"lst_int4":[1,2,3],"single_str4":"word","lst_str4":["tst4","tst2"],"dct4":{"tst4":1}}
+{"single_int5":6,"lst_int5":[1,2,3],"single_str5":"word","lst_str5":["tst5","tst2"],"dct5":{"tst5":1}}
+{"single_int6":7,"lst_int6":[1,2,3],"single_str6":"word","lst_str6":["tst6","tst2"],"dct6":{"tst6":1}}
+{"single_int7":8,"lst_int7":[1,2,3],"single_str7":"word","lst_str7":["tst7","tst2"],"dct7":{"tst7":1}}
