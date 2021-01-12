@@ -1,3 +1,5 @@
+<!-- README: This project was written to be a graphical solution to expenses project, that allows to manage and visualize expenses interactively in a GUI. -->
+
 ## Name 
 
 expenses-rshiny

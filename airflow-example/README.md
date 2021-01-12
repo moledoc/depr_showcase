@@ -1,3 +1,4 @@
+<!-- README: This is just to display, that I am familiar with airflow. This example was one of my homeworks in Data-Engineering course. In this project, I am responsible of the dag, that is located in dags/ directory. All the other setup (airflow and docker) was not done by me in this case. -->
 
 ## Synopsis
 

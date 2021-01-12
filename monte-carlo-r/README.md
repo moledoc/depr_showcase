@@ -1,3 +1,4 @@
+<!-- README: This project is to test and explore serial and parallel computations in R. Monte-Carlo method is used, since it is easily parallelized. -->
 
 ## Synopsis
 

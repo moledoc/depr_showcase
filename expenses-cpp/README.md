@@ -1,3 +1,5 @@
+<!-- README: this project was written as a project in C++ course and is meant to be run in a GNU/Linux commandline. This program semi interactive. -->
+
 ## Name
 
 expenses - Tool for summarizing expenses written in C++

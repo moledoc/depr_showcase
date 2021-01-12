@@ -1,3 +1,5 @@
+<!-- README: This project was written as a project in a functional programming course to learn scala. This is a GUI implementation of expenses project written with scala and scalafx. There are some things that could have been done better (eg use actual date type for dates instead of strings). Not going to fix them, this is just to show my level in scala. -->
+
 ## Name 
 
 expenses-scala

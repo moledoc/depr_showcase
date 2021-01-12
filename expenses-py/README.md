@@ -1,3 +1,5 @@
+<!-- REAMDE: This project was written to be simple script that can be ran on the commandline either in computer or mobile device. Reports the last 3 month expenses starting from current/running month. -->
+
 # Synopsis
 
 This is a simple python script, that summaries expenses from a text file. Summary is printed out for the running (or given month, see Options) month and two previous months. Data is read from file named data.csv. The separator in that file is expected to be ';' and the data must be arrange as folllows: Date;Expense;Type;Description. Date column should contain dates in format yyy-mm-dd; decimal separator in Expenses should be '.'. Sample data file is also included in the repository (data is randomly generated).

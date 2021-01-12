@@ -1,3 +1,4 @@
+<!-- README: This project was made to show the parallel aspects of Haskell. Also, it was submitted as a homework in parallel computation course. The Monte-Carlo method was used as an example, since MC method is embarrasingly parallel. In this project speedup was not achieved. Furthermore, the Haskell implementation can be improved upon. -->
 
 ## Name
 

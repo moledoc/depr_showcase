@@ -1,3 +1,5 @@
+<!-- README: This project was written to learn Haskell. This is an interactive CLI implementation of expenses project. -->
+
 ## Name 
 
 expenses-hs

@@ -1,3 +1,4 @@
+<!-- README: This project is to show simple Message Passing Interface (MPI) implementation in python, using simple Monte-Carlo method example. -->
 
 ## Synopsis
 

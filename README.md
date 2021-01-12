@@ -1,40 +1,31 @@
-# Showcase
+## Name
+
+Showcase
+
+## Synopsis
+
+Showcasing:
+
+* my knowledge/skills in different programming languages;
+* ideas and other/cool projects;
+
+## List of current projects
+
+* gen_readme.sh: Generate README.md
+* FizzBuzz: Some FizzBuzz examples in different languages. Tried to make them little bit more efficient than the most obvious/simple solution. They are probably not THE most efficient solutions, but bit better. 
+* airflow-example: This is just to display, that I am familiar with airflow. This example was one of my homeworks in Data-Engineering course. In this project, I am responsible of the dag, that is located in dags/ directory. All the other setup (airflow and docker) was not done by me in this case. 
+* csv_parser-hs: When compiled, takes a filepath and parses the contents to a matrix, where each matrix row corresponds to row in a file. Each comma separated item is it's own item inside the row list.
+* expenses-cpp: this project was written as a project in C++ course and is meant to be run in a GNU/Linux commandline. This program semi interactive. 
+* expenses-hs: This project was written to learn Haskell. This is an interactive CLI implementation of expenses project. 
+* expenses-py_sql: This is an old and abandoned project, but it showcases some early knowledge of (and probably not very good approaches to) python, json and sql. 
+* expenses-scala: This project was written as a project in a functional programming course to learn scala. This is a GUI implementation of expenses project written with scala and scalafx. There are some things that could have been done better (eg use actual date type for dates instead of strings). Not going to fix them, this is just to show my level in scala. 
+* monte-carlo-hs: This project was made to show the parallel aspects of Haskell. Also, it was submitted as a homework in parallel computation course. The Monte-Carlo method was used as an example, since MC method is embarrasingly parallel. In this project speedup was not achieved. Furthermore, the Haskell implementation can be improved upon. 
+* monte-carlo-py: This project is to show simple Message Passing Interface (MPI) implementation in python, using simple Monte-Carlo method example. 
+* expenses-rshiny: This project was written to be a graphical solution to expenses project, that allows to manage and visualize expenses interactively in a GUI. 
+* monte-carlo-r: This project is to test and explore serial and parallel computations in R. Monte-Carlo method is used, since it is easily parallelized. 
+* parse.json: This is a package to read json objects into R list or write a R list into json object. This package is written using only R.
+
+# Author
 
 Written by
 Meelis Utt
-
-## The reason for this repository
-
-This repository is created to showcase different programming languages by implementing an 'expenses' project.
-Each implementation is different from one another. For each implementation there should exist separate README file.
-
-### Why expenses project and what does it mean
-
-I wanted to have a program that allowed me to track my expenses. Over time my needs, skills and ideas changed, which resulted in different implementations of expenses project. In the end, I've decided to think of my expenses projects as showcases and references to different programming languages. This has several benefits:
-
-* I can use this repository as a portfolio; 
-* I or someone else can reference and/or look up some solutions/ideas/syntax, if there is any need. 
-
-In the future I'm planning on adding implementations of expenses project in different programming languages. Furthermore, I'll be adding different kind of projects to this repository. For example 'Simple csv parser in Haskell' or simple Monte-Carlo method implementations in different languages.
-
-### List of current projects
-
-#### Expenses
-
-* Python + SQL (py_sql) - this project is old, incomplete and abandoned, but showcases some python and sql (althought the code is not the most elegant).
-* Python (py) -  this project was written to be simple script that can be ran on the commandline either in computer or mobile device.
-* R + shiny (rshiny) - this project was written to be a graphical solution to expenses project, that allows to manage and visualize expenses interactively in a GUI.
-* C++ (cpp) - this project was written as a project in C++ course and is meant to be run in a GNU/Linux commandline. This program semi interactive.
-* Haskell (hs) - this project was written to learn Haskell. This is an interactive CLI implementation of expenses project.
-
-#### Monte-Carlo
-
-* Haskell - This project was made to show the parallel aspects of Haskell. Also, it was submitted as a homework in parallel computation course. The Monte-Carlo method was used as an example, since MC method is embarrasingly parallel. In this project it was not achieved. Furthermore, the Haskell implementation can be improved upon.
-* R - This project is to test and explore serial and parallel computations in R. Monte-Carlo method is used, since it is easily parallelized.
-* Python - This project is to show simple Message Passing Interface (MPI) implementation in python, using simple Monte-Carlo method example.
-
-#### Other
-
-* Simple csv parser in haskell - When compiled, takes a filepath and parses the contents to a matrix, where each matrix row corresponds to row in a file. Each comma separated item is it's own item inside the row list.
-* FizzBuzz - Implementations of fizzbuzz in different languages. Tried to make them bit more efficient, than the most simple solution. However, I haven't benchmarked them.
-* Airflow-example - This is just to display, that I am familiar with airflow. This example was one of my homeworks in Data-Engineering course. In this project, I am responsible of the dag, that is located in dags/ directory. All the other setup (airflow and docker) was not done by me in this case.
