@@ -1,10 +1,12 @@
+<!-- README: This is a python script that takes in a json file and parses each level of json to a table format into a csv file. -->
+
 ## Name 
 
 json-parser-py
 
 ## Synopsis 
 
-This is a python script that takes in a json file and parses each level json to a table format.
+This is a python script that takes in a json file and parses each level of json to a table format into a csv file.
 
 ## Dependecies
 
